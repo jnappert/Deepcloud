@@ -1,0 +1,19 @@
+Modifications
+
+Trainer.py - line 267: removed "save to git function"
+
+Disabled torchvision due to not being able import module _C* in:
+-SirtaDataset.py
+-model_sirta.py
+-trainer_sirta_set_creation.py
+
+Trainer_sirta_set_creation.py - line 212: hardcoded h = 12, minu = 16
+-line 191:  y = 2018 hardcoded
+-line 209: folder_name = '{}/{}{}{}'.format(y, y, M, D), change directory path
+-line 74: pos = 1, changed position from 2 to 1
+
+skill_scores.py - line 207, 208: hard coded y = 2018, and set indexes to [m, d, h, minu]
+
+SirtaDataset.py - line 72, 73: hard coded y = 2018, and set indexes to [m, d, h, minu]
+
+environment.yml - pip install tensorboard and tensorflow
