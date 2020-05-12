@@ -121,6 +121,18 @@ class Trainer:
         # Fetch data
         t0 = time()
         batch = self._get_next_batch()
+
+        print(batch['images'].size(), batch['aux_data'].size(), batch['irradiance'].size())
+        print(batch['images'][0, 0, :, :].size())
+        for x in batch['images'][0,1]:
+            print(x)
+        """print(batch['images'][0, 0, :, :])
+        print(batch['images'][0, 1, :, :])
+        print(batch['images'][0, 2, :, :])
+        print(batch['images'][0, 3, :, :])
+        print(batch['aux_data'][0, :])
+        print(batch['irradiance'][0])"""
+
         self.preprocess_batch(batch)
         data_fetch_time = time() - t0
         # Forward pass
