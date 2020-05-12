@@ -3,7 +3,7 @@ tag: 'testing_images'
 
 shades: 'Y'
 IMG_SIZE: 128
-nb_training_seq: 40
+nb_training_seq: 80
 nb_validation_seq: 20  #val_iterations * batch size??
 lookback: 1
 lookforward: 5
