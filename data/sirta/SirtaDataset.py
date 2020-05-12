@@ -169,14 +169,21 @@ class SirtaDataset(Dataset):
                                 img_array_1 = cv2.imread((path_image_1), cv2.IMREAD_GRAYSCALE)
                                 img_array_2 = cv2.imread((path_image_2), cv2.IMREAD_GRAYSCALE)
 
-                            img_array_redim_1 = img_array_1[35:725, 150:860]
-                            img_array_redim_2 = img_array_2[35:725, 150:860]
+                            elif self.shades == 'SAT':
+                                img_array_redim_1 = np.reshape(get_sat_image(y, m, d, h, minu, cls=False), (41, 25))
+                                new_array_1 = cv2.resize(img_array_redim_1, (self.IMG_SIZE, self.IMG_SIZE))
+                                new_array_1[new_array_1 == 0] = 1
+                                new_array_1 = np.array(new_array_1).reshape(1, self.IMG_SIZE, self.IMG_SIZE)
 
-                            new_array_1 = cv2.resize(img_array_redim_1, (self.IMG_SIZE, self.IMG_SIZE))
-                            new_array_2 = cv2.resize(img_array_redim_2, (self.IMG_SIZE, self.IMG_SIZE))
+                            if self.shades != 'SAT':
+                                img_array_redim_1 = img_array_1[35:725, 150:860]
+                                img_array_redim_2 = img_array_2[35:725, 150:860]
 
-                            new_array_1[new_array_1 == 0] = 1
-                            new_array_2[new_array_2 == 0] = 1
+                                new_array_1 = cv2.resize(img_array_redim_1, (self.IMG_SIZE, self.IMG_SIZE))
+                                new_array_2 = cv2.resize(img_array_redim_2, (self.IMG_SIZE, self.IMG_SIZE))
+
+                                new_array_1[new_array_1 == 0] = 1
+                                new_array_2[new_array_2 == 0] = 1
 
                             if self.shades == 'RGB':
                                 new_array_1 = np.array(new_array_1).reshape(self.IMG_SIZE, self.IMG_SIZE, 3)
@@ -224,19 +231,32 @@ class SirtaDataset(Dataset):
 
                         #data = [new_array_1, new_array_2, solar_zenith_angle, solar_azimuthal_angle, irradiance, file_name]
 
-                        past_images.append([new_array_1, new_array_2])
+                        if self.shades != 'SAT':
+                            past_images.append([new_array_1, new_array_2])
+                        else:
+                            past_images.append(new_array_1)
 
-        [img_short_lb0, img_long_lb0] = past_images[-1]
-        [img_short_lb1, img_long_lb1] = past_images[-2]
+        if self.shades != 'SAT':
+            [img_short_lb0, img_long_lb0] = past_images[-1]
+            [img_short_lb1, img_long_lb1] = past_images[-2]
 
 
-        #totensor = ToTensor()
-        sample = {'images': torch.from_numpy(np.concatenate((img_short_lb0, img_long_lb0, img_short_lb1, img_long_lb1))),
-                  'aux_data': np.array(aux_data+past_irradiances),
-                  'irradiance': np.array([target])}
-        #sample = {'images': torch.from_numpy(new_array_1).float(), 'aux_data': np.array(aux_data),'irradiance': np.array([target])}
+            #totensor = ToTensor()
+            sample = {'images': torch.from_numpy(np.concatenate((img_short_lb0, img_long_lb0, img_short_lb1, img_long_lb1))),
+                      'aux_data': np.array(aux_data+past_irradiances),
+                      'irradiance': np.array([target])}
+            #sample = {'images': torch.from_numpy(new_array_1).float(), 'aux_data': np.array(aux_data),'irradiance': np.array([target])}
 
-        #sample = totensor(sample)
+            #sample = totensor(sample)
+        else:
+            # totensor = ToTensor()
+            sample = {
+                'images': torch.from_numpy(np.concatenate((past_images[0], past_images[1]))),
+                'aux_data': np.array(aux_data + past_irradiances),
+                'irradiance': np.array([target])}
+            # sample = {'images': torch.from_numpy(new_array_1).float(), 'aux_data': np.array(aux_data),'irradiance': np.array([target])}
+
+            # sample = totensor(sample)
 
         if self.transform:
             sample = self.transform(sample) #Error : variable transform / methode
@@ -304,18 +324,53 @@ def neighbours(y, m, d, h, minu, pos):
     return (Y, M, D, H, Minu)
 
 
+def get_sat_image(y, m, d, h, minu, cls):
+    if d < 10:
+        day = '0' + str(d)
+    else:
+        day = str(d)
+    if m < 10:
+        month = '0' + str(m)
+    else:
+        month = str(m)
+    year = str(y)
+    # round to nearest 15
+    minu_rd = 15 * round(minu/15)
+
+    idx = int(h * 4 + minu_rd / 15 - 1)
+
+    if cls:
+        fp = 'D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Satellite/preprocessed_irradiance_data' \
+                '/cls_ghi/{}/'.format(year)
+        fn = 'Palaiseau_cls_ghi_{}{}{}.csv'.format(year, month, day)
+    else:
+        fp = 'D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Satellite/preprocessed_irradiance_data' \
+             '/ghi/{}/'.format(year)
+        fn = 'Palaiseau_ghi_{}{}{}.csv'.format(year, month, day)
+    file = fp + fn
+
+    #if os.path.isdir(file):
+    df = pd.read_csv(file, header=1, usecols=range(1, 1026))
+    Irradiance = np.array(df.iloc[idx, :])
+
+    return Irradiance/100
+
 # Helper function to show a batch
 def show_data_batch(sample_batched):
     """Show image with landmarks for a batch of samples."""
     images_batch, irradiance_batch = \
-            sample_batched['image'], sample_batched['irradiance']
+            sample_batched['images'], sample_batched['irradiance']
     batch_size = len(images_batch)
+    print(images_batch.size()[1])
 
-    for i in range(batch_size):
-        plt.figure()
-        plt.imshow(images_batch[i][:, :, 0])
+    for i in range(0, images_batch.size()[1]):
+        plt.figure(i)
+        plt.imshow(images_batch[0, i, :, :])
+
         # plt.imshow(images_batch[i][:, :, 1])
         # plt.imshow(images_batch[i][:, :, 2])
         # plt.imshow(images_batch[i][:, :, 3])
 
-        plt.title('Batch from dataloader (Irradiance : {})'.format(irradiance_batch[i]))
+        #plt.title('Batch from dataloader (Irradiance : {})'.format(irradiance_batch[i]))
+        plt.title('Image {}'.format(str(i)))
+        plt.show()

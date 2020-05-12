@@ -1,6 +1,7 @@
 output_path: 'Experiments/sirta/experiments/'
 tag: 'testing_images'
 
+#shades: 'Y'
 shades: 'Y'
 IMG_SIZE: 128
 nb_training_seq: 8
