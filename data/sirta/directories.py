@@ -13,7 +13,7 @@ Need to add:
 def data_images_dir(computer):
 
     if computer == 'DESKTOP-A1O805T':
-        DATADIR = "/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Sky_images/sfr02_201807_201807/"  # Julian's
+        DATADIR = "D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Sirta/Sky_images/sfr02_201807_201807/"  # Julian's
     elif computer=='quentin-UX330UAK-Ubuntu':
         DATADIR = "/home/quentin/Documents/Cambridge/Research_project/Datasets/Sirta/Sky_images/sfr02_201801_201809/"  # Laptop
     elif computer=='Nutmeg' or computer=='Gpu_hpc':
@@ -35,7 +35,7 @@ def data_images_dir(computer):
 def data_preprocessed_images_dir(computer):
 
     if computer == 'DESKTOP-A1O805T':
-        DATADIR = "/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Sky_images/sfr02_201807_201807/"  # Julian's
+        DATADIR = "D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Sirta/Sky_images/sfr02_201807_201807/"  # Julian's
     elif computer=='quentin-UX330UAK-Ubuntu':
         DATADIR = "/home/quentin/Documents/Cambridge/Research_project/Datasets/Sirta/Sky_images/sfr02_201801_201809/"  # Laptop
     elif computer=='Nutmeg' or computer=='Gpu_hpc':
@@ -57,7 +57,7 @@ def data_preprocessed_images_dir(computer):
 def data_irradiance_dir(computer):
 
     if computer == 'DESKTOP-A1O805T':
-        DATADIR_IRRADIANCE = "/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Irradiance/solys2/preprocessed_irradiance_data/"  # Julian's
+        DATADIR_IRRADIANCE = "D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Sirta/Irradiance/solys2/preprocessed_irradiance_data/"  # Julian's
     elif computer == 'quentin-UX330UAK-Ubuntu':
         DATADIR_IRRADIANCE = "/home/quentin/Documents/Cambridge/Research_project/Datasets/Sirta/Irradiance/solys2/preprocessed_irradiance_data/"
     elif computer == 'Nutmeg' or computer == 'Gpu_hpc':
@@ -79,7 +79,7 @@ def data_irradiance_dir(computer):
 def data_clear_sky_irradiance_dir(computer):
 
     if computer == 'DESKTOP-A1O805T':
-        DATADIR_CLEAR_SKY_IRRADIANCE = "/Users/julia/Documents/Cambridge Work/Dissertation/Data/Helio/"  # Julian's
+        DATADIR_CLEAR_SKY_IRRADIANCE = "D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Helio/"  # Julian's
     elif computer == 'quentin-UX330UAK-Ubuntu':
         DATADIR_CLEAR_SKY_IRRADIANCE = "/home/quentin/Documents/Cambridge/Research_project/Datasets/Helio/"
     elif computer == 'Nutmeg' or computer == 'Gpu_hpc':
