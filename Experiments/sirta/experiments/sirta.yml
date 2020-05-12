@@ -1,0 +1,38 @@
+output_path: '/Users/julia/OneDrive/Documents/Cambridge Work/Dissertation/Experiments/sirta/experiments/'
+tag: 'testing_images'
+
+shades: 'Y'
+IMG_SIZE: 128
+nb_training_seq: 40
+nb_validation_seq: 20  #val_iterations * batch size??
+lookback: 1
+lookforward: 5
+
+batch_size: 10
+n_iterations: 40 #10000 # = batch_size*nb_epoch
+print_iterations: 1 # print_iterations*batch_size = nb_training_seq (1 epoch)
+vis_iterations: 1000
+#val_iterations: 100
+n_workers: 8 #normally 4
+gpu: False
+gpu_nb: 0
+preprocessed_dataset: False
+
+# Optimiser
+learning_rate: 0.0005
+weight_decay: 0.0001
+
+#python run_training.py --config Experiments/sirta/experiments/sirta.yml
+
+# Windle
+#ssh -A -Y -L 16006:127.0.0.1:6006 windle
+#tensorboard --logdir=/scratches/bagnet/qp208/Experiments/sirta/experiments --host localhost
+
+#tensorboard --logdir=C:/Users/julia/OneDrive/Documents/Cambridge Work/Dissertation/Experiments/sirta/experiments/
+# use this one
+#python -m tensorboard.main --logdir=/Experiments/sirta/experiments/
+
+#find . -type d -name '*2020_02_10*' -exec rm -r {} +
+
+#output_path: '/scratches/bagnet/qp208/Experiments/sirta/experiments/'
+#tag: 'keras_2017_preprocessed_images'
