@@ -8,6 +8,7 @@ from skimage import io, transform
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
+
 """ This is giving me error: from torchvision import _C
 ImportError: DLL load failed: The specified module could not be found.
 In sirtadataset, model_sirta, trainer_sirta_sets_creation"""
@@ -16,18 +17,19 @@ import socket
 
 from data.sirta.directories import data_images_dir, data_irradiance_dir, data_preprocessed_images_dir
 
-# Ignore warnings
-#import warnings
-#warnings.filterwarnings("ignore")
 
-#plt.ion()   # interactive mode
+# Ignore warnings
+# import warnings
+# warnings.filterwarnings("ignore")
+
+# plt.ion()   # interactive mode
 
 
 class SirtaDataset(Dataset):
     """Sirta dataset."""
 
     def __init__(self, seq_indexes, shades, IMG_SIZE, lookback, lookforward, preprocessed_dataset=True, transform=None):
-    #def __init__(self, computer, nb_training_seq, lookback, lookforward, mode=None, transform=None):
+        # def __init__(self, computer, nb_training_seq, lookback, lookforward, mode=None, transform=None):
         """
         Args:
             csv_file (string): Path to the csv file with measurement.
@@ -36,9 +38,9 @@ class SirtaDataset(Dataset):
                 on a sample.
         """
 
-        #self.measurements_list = pd.read_csv(csv_file)
-        #self.root_dir = root_dir
-        #self.nb_training_seq = nb_training_seq
+        # self.measurements_list = pd.read_csv(csv_file)
+        # self.root_dir = root_dir
+        # self.nb_training_seq = nb_training_seq
 
         self.seq_indexes = seq_indexes
         self.shades = shades
@@ -49,16 +51,14 @@ class SirtaDataset(Dataset):
         self.transform = transform
         self.preprocessed_dataset = preprocessed_dataset
 
-        #self.training_seq_idexes = []
-        #self.validation_seq_idexes = []
-        #self.mode = mode
-
+        # self.training_seq_idexes = []
+        # self.validation_seq_idexes = []
+        # self.mode = mode
 
     def __len__(self):
-        return len(self.seq_indexes) #int(nb_training_seq*0.8) #len(self.measurements_list)
+        return len(self.seq_indexes)  # int(nb_training_seq*0.8) #len(self.measurements_list)
 
-
-    def __getitem__(self, idx):
+    def __getitem__(self, idx, train=True):
 
         if self.preprocessed_dataset == True:
             DATADIR = data_preprocessed_images_dir(self.computer)
@@ -67,32 +67,44 @@ class SirtaDataset(Dataset):
 
         DATADIR_IRRADIANCE = data_irradiance_dir(self.computer)
 
-        #y, m, d, h, minu = self.seq_indexes[idx]
+        # y, m, d, h, minu = self.seq_indexes[idx]
 
         y = 2018
-        m, d, h, minu = self.seq_indexes[idx]
+        if train:
+            m, d, h, minu = self.seq_indexes[idx]
+        else:
+            m, d, h, minu = idx[0], idx[1], idx[2], idx[3]
+
         samples_list_indexes = lookback_indexes(y, m, d, h, minu, self.lookback)
         past_images = []
         past_irradiances = []
 
-        for [y, m, d, h, minu] in  samples_list_indexes:
-            if m <= 9: M = '0{}'.format(m)
-            else: M = '{}'.format(m)
+        for [y, m, d, h, minu] in samples_list_indexes:
+            if m <= 9:
+                M = '0{}'.format(m)
+            else:
+                M = '{}'.format(m)
 
-            if d <= 9: D = '0{}'.format(d)
-            else: D = '{}'.format(d)
+            if d <= 9:
+                D = '0{}'.format(d)
+            else:
+                D = '{}'.format(d)
 
-            if h < 10: H = '0{}'.format(h)
-            else: H = '{}'.format(h)
+            if h < 10:
+                H = '0{}'.format(h)
+            else:
+                H = '{}'.format(h)
 
-            if minu < 10: Minu = '0{}'.format(minu)
-            else: Minu = '{}'.format(minu)
+            if minu < 10:
+                Minu = '0{}'.format(minu)
+            else:
+                Minu = '{}'.format(minu)
 
             folder_name = '{}/{}{}{}'.format(y, y, M, D)
             path = os.path.join(DATADIR, folder_name)
 
-
-            if os.path.isdir(path) == True:
+            # THIS NEEDS TO BE TRUE ######################################################################################
+            if os.path.isdir(path) == False:
 
                 irra_file_name = '{}/solys2_radflux_{}{}{}.csv'.format(y, y, M, D)
                 irra_path = os.path.join(DATADIR_IRRADIANCE, irra_file_name)
@@ -104,20 +116,20 @@ class SirtaDataset(Dataset):
                 solar_azimuthal_angle = df['solar_azimuthal_angle'][min_1440]
 
                 ### Zenith Angle
-                solar_zenith_angle_rad = np.pi*solar_zenith_angle/180
+                solar_zenith_angle_rad = np.pi * solar_zenith_angle / 180
                 solar_zenith_angle_cos = np.cos(solar_zenith_angle_rad)
                 solar_zenith_angle_sin = np.sin(solar_zenith_angle_rad)
 
                 ### Azimutal Angle
-                solar_azimuthal_angle_rad = np.pi*solar_azimuthal_angle/180
+                solar_azimuthal_angle_rad = np.pi * solar_azimuthal_angle / 180
                 solar_azimuthal_angle_cos = np.cos(solar_azimuthal_angle_rad)
                 solar_azimuthal_angle_sin = np.sin(solar_azimuthal_angle_rad)
-
 
                 file_name = [m, d, h, minu]  # '2018{}{}{}{}'.format(M,D, H, minu)
 
                 # Target:
-                y_target, m_target, d_target, h_target, minu_target = lookforward_index(y, m, d, h, minu, self.lookforward)
+                y_target, m_target, d_target, h_target, minu_target = lookforward_index(y, m, d, h, minu,
+                                                                                        self.lookforward)
                 min_1440_target = minu_target + 60 * h_target
                 target = df['global_solar_flux'][min_1440_target]
 
@@ -129,7 +141,7 @@ class SirtaDataset(Dataset):
                 past_irradiances.append(irradiance)
 
                 aux_data = [solar_zenith_angle_rad, solar_zenith_angle_cos, solar_zenith_angle_sin,
-                                solar_azimuthal_angle_rad, solar_azimuthal_angle_cos, solar_azimuthal_angle_sin]
+                            solar_azimuthal_angle_rad, solar_azimuthal_angle_cos, solar_azimuthal_angle_sin]
 
                 metadata_only = None
                 if metadata_only == True:
@@ -143,7 +155,8 @@ class SirtaDataset(Dataset):
                     path_image_1 = os.path.join(path, file_name_1)
                     path_image_2 = os.path.join(path, file_name_2)
 
-                    if os.path.isfile(path_image_1) == True and os.path.isfile(path_image_2) == True:
+                    # THESE ALSO NEED TO BE TRUE #######################################################################
+                    if os.path.isfile(path_image_1) == False and os.path.isfile(path_image_2) == False:
 
                         if self.preprocessed_dataset:
 
@@ -169,11 +182,16 @@ class SirtaDataset(Dataset):
                                 img_array_1 = cv2.imread((path_image_1), cv2.IMREAD_GRAYSCALE)
                                 img_array_2 = cv2.imread((path_image_2), cv2.IMREAD_GRAYSCALE)
 
+                            # -----------------------------------------------------------------------------------------
+                            # image set up for satellite grid
+                            # -----------------------------------------------------------------------------------------
                             elif self.shades == 'SAT':
                                 img_array_redim_1 = np.reshape(get_sat_image(y, m, d, h, minu, cls=False), (41, 25))
-                                new_array_1 = cv2.resize(img_array_redim_1, (self.IMG_SIZE, self.IMG_SIZE))
+                                #new_array_1 = cv2.resize(img_array_redim_1, (self.IMG_SIZE, self.IMG_SIZE))
+                                new_array_1 = cv2.resize(img_array_redim_1, (100, 164))
                                 new_array_1[new_array_1 == 0] = 1
-                                new_array_1 = np.array(new_array_1).reshape(1, self.IMG_SIZE, self.IMG_SIZE)
+                                #new_array_1 = np.array(new_array_1).reshape(1, self.IMG_SIZE, self.IMG_SIZE)
+                                new_array_1 = np.array(new_array_1).reshape(1, 164, 100)
 
                             if self.shades != 'SAT':
                                 img_array_redim_1 = img_array_1[35:725, 150:860]
@@ -229,7 +247,7 @@ class SirtaDataset(Dataset):
                                 new_array_1 = np.array(new_array_1).reshape(self.IMG_SIZE, self.IMG_SIZE, 1)
                                 new_array_2 = np.array(new_array_2).reshape(self.IMG_SIZE, self.IMG_SIZE, 1)
 
-                        #data = [new_array_1, new_array_2, solar_zenith_angle, solar_azimuthal_angle, irradiance, file_name]
+                        # data = [new_array_1, new_array_2, solar_zenith_angle, solar_azimuthal_angle, irradiance, file_name]
 
                         if self.shades != 'SAT':
                             past_images.append([new_array_1, new_array_2])
@@ -237,21 +255,21 @@ class SirtaDataset(Dataset):
                             past_images.append(new_array_1)
 
         if self.shades != 'SAT':
-            [img_short_lb0, img_long_lb0] = past_images[-1]
-            [img_short_lb1, img_long_lb1] = past_images[-2]
+            [img_short_lb0, img_long_lb0] = past_images[-0]
+            [img_short_lb1, img_long_lb1] = past_images[-1]
 
+            # totensor = ToTensor()
+            sample = {
+                'images': torch.from_numpy(np.concatenate((img_short_lb0, img_long_lb0, img_short_lb1, img_long_lb1))),
+                'aux_data': np.array(aux_data + past_irradiances),
+                'irradiance': np.array([target])}
+            # sample = {'images': torch.from_numpy(new_array_1).float(), 'aux_data': np.array(aux_data),'irradiance': np.array([target])}
 
-            #totensor = ToTensor()
-            sample = {'images': torch.from_numpy(np.concatenate((img_short_lb0, img_long_lb0, img_short_lb1, img_long_lb1))),
-                      'aux_data': np.array(aux_data+past_irradiances),
-                      'irradiance': np.array([target])}
-            #sample = {'images': torch.from_numpy(new_array_1).float(), 'aux_data': np.array(aux_data),'irradiance': np.array([target])}
-
-            #sample = totensor(sample)
+            # sample = totensor(sample)
         else:
             # totensor = ToTensor()
             sample = {
-                'images': torch.from_numpy(np.concatenate((past_images[0], past_images[1]))),
+                'images': torch.from_numpy(np.concatenate((past_images[-0], past_images[-1]))),
                 'aux_data': np.array(aux_data + past_irradiances),
                 'irradiance': np.array([target])}
             # sample = {'images': torch.from_numpy(new_array_1).float(), 'aux_data': np.array(aux_data),'irradiance': np.array([target])}
@@ -259,9 +277,17 @@ class SirtaDataset(Dataset):
             # sample = totensor(sample)
 
         if self.transform:
-            sample = self.transform(sample) #Error : variable transform / methode
+            sample = self.transform(sample)  # Error : variable transform / methode
 
         return sample
+
+    def get_image(self, idx):
+        sample = self.__getitem__(idx, train=False)
+        images, aux_data, irradiance = sample['images'], sample['aux_data'], sample['irradiance']
+        return {'images': images.unsqueeze(0),  # .type(torch.cuda.FloatTensor),
+                'aux_data': torch.from_numpy(aux_data).float().unsqueeze(0),
+                'irradiance': torch.from_numpy(irradiance).float().unsqueeze(0)}
+
 
 
 class ToTensor(object):
@@ -277,9 +303,10 @@ class ToTensor(object):
 
         ###image = np.transpose(image, (2, 0, 1)).shape
 
-        return {'images': image, #.type(torch.cuda.FloatTensor),
+        return {'images': image,  # .type(torch.cuda.FloatTensor),
                 'aux_data': torch.from_numpy(aux_data).float(),
                 'irradiance': torch.from_numpy(irradiance).float()}
+
 
 def show_image(image):
     """Show image with landmarks"""
@@ -291,15 +318,18 @@ def lookforward_index(y, m, d, h, minu, lookforward):  # return index of future 
     id = neighbours(y, m, d, h, minu, lookforward)
     return (id)
 
-def lookback_indexes(y, m, d, h, minu, lookback): #return list of past samples indexes
-    list=[]
+
+def lookback_indexes(y, m, d, h, minu, lookback):  # return list of past samples indexes
+    list = []
     for k in range(-lookback, 1):
-        id=neighbours(y, m, d, h, minu, k)
+        id = neighbours(y, m, d, h, minu, k)
         list.append(id)
-    return(list)
+    return (list)
+
 
 def neighbours(y, m, d, h, minu, pos):
-    pos = pos * 2
+    # for SAT, need to increase position to 14
+    pos = pos * 14
     H = h
     Minu = minu + pos
     change = True
@@ -335,13 +365,13 @@ def get_sat_image(y, m, d, h, minu, cls):
         month = str(m)
     year = str(y)
     # round to nearest 15
-    minu_rd = 15 * round(minu/15)
+    minu_rd = 15 * round(minu / 15)
 
     idx = int(h * 4 + minu_rd / 15 - 1)
 
     if cls:
         fp = 'D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Satellite/preprocessed_irradiance_data' \
-                '/cls_ghi/{}/'.format(year)
+             '/cls_ghi/{}/'.format(year)
         fn = 'Palaiseau_cls_ghi_{}{}{}.csv'.format(year, month, day)
     else:
         fp = 'D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Satellite/preprocessed_irradiance_data' \
@@ -349,28 +379,31 @@ def get_sat_image(y, m, d, h, minu, cls):
         fn = 'Palaiseau_ghi_{}{}{}.csv'.format(year, month, day)
     file = fp + fn
 
-    #if os.path.isdir(file):
+    # if os.path.isdir(file) == True:
     df = pd.read_csv(file, header=1, usecols=range(1, 1026))
     Irradiance = np.array(df.iloc[idx, :])
 
-    return Irradiance/100
+    return Irradiance / 100
+
 
 # Helper function to show a batch
 def show_data_batch(sample_batched):
     """Show image with landmarks for a batch of samples."""
-    images_batch, irradiance_batch = \
-            sample_batched['images'], sample_batched['irradiance']
-    batch_size = len(images_batch)
-    print(images_batch.size()[1])
+    images_batch, irradiance_batch, aux_data_batch = \
+        sample_batched['images'], sample_batched['irradiance'], sample_batched['aux_data']
 
     for i in range(0, images_batch.size()[1]):
         plt.figure(i)
-        plt.imshow(images_batch[0, i, :, :])
+        plt.imshow(images_batch[0, i, :, :], vmin=0, vmax=255)
+        #plt.imshow(images_batch[i, :, :], vmin=0, vmax=255)
 
         # plt.imshow(images_batch[i][:, :, 1])
         # plt.imshow(images_batch[i][:, :, 2])
         # plt.imshow(images_batch[i][:, :, 3])
 
-        #plt.title('Batch from dataloader (Irradiance : {})'.format(irradiance_batch[i]))
-        plt.title('Image {}'.format(str(i)))
+        # plt.title('Batch from dataloader (Irradiance : {})'.format(irradiance_batch[i]))
+        plt.title('Image {}: Irradiance = {:0.2f}'.format(str(i), aux_data_batch[0][i + 6] * 288.8 + 434.4))
+        #plt.title('Image {}: Irradiance = {:0.2f}'.format(str(i), aux_data_batch[i + 6] * 288.8 + 434.4))
         plt.show()
+
+

@@ -14,11 +14,12 @@ from tensorboardX import SummaryWriter
 from utils import Config, Logger, format_time, print_model_spec, get_git_hash
 
 
-class Trainer:
+class Model_Test:
     __meta_class__ = ABCMeta
 
     def __init__(self, options):
         self.options = options
+
         ##########
         # Trainer utils
         ##########
@@ -48,19 +49,18 @@ class Trainer:
         self.device = torch.device(device_name) if self.config.gpu else torch.device('cpu')
 
         ##########
-        # Data
+        # Sample
         ##########
-        self.train_dataset, self.val_dataset = None, None
-        self.train_dataloader, self.val_dataloader = None, None
-        self._train_dataloader_iter = None
-        self.create_data()
+        self.dataset = None
+        self.sample = None
+        self.index = None
+
 
         ##########
         # Model
         ##########
         self.model = None
         self.create_model()
-        print_model_spec(self.model)
         self.model.to(self.device)
 
         ##########
@@ -80,14 +80,15 @@ class Trainer:
         ##########
         self.train_metrics = None
         self.val_metrics = None
-        self.create_metrics()
+        #self.create_metrics()
 
         # Restore model
         if self.options.restore:
             self.load_checkpoint()
 
+
     @abstractmethod
-    def create_data(self):
+    def create_sample(self):
         """Create train/val datasets and dataloaders."""
 
     @abstractmethod
@@ -118,63 +119,6 @@ class Trainer:
     def visualise(self, batch, output, mode):
         """Visualise inputs and outputs on tensorboard."""
 
-    def train_step(self):
-        # Fetch data
-        t0 = time()
-        batch = self._get_next_batch()
-        # just to visualize images
-        #show_data_batch(batch)
-        # cast to device
-        self.preprocess_batch(batch)
-        data_fetch_time = time() - t0
-        # Forward pass, calculates output and loss with training data
-        t1 = time()
-        output = self.forward_model(batch)
-        loss = self.forward_loss(batch, output)
-        # Backward pass, basically runs through an iteration of gradient descent
-        # sets gradients back to zero
-        self.optimiser.zero_grad()
-        # computes loss function gradients
-        loss.backward()
-        # performs a step in the optimiser and updates parameters
-        self.optimiser.step()
-        model_update_time = time() - t1
-        # Printing out metrics
-        #if self.global_step % self.config.print_iterations == 0:
-        if (self.global_step * self.config.batch_size) % self.config.nb_training_seq == 0:
-            step_duration = time() - t0
-            self.print_log(loss, step_duration, data_fetch_time, model_update_time)
-            self.tensorboard.add_scalar('train/loss', loss.item(), self.global_step)
-
-        # Visualise
-        self.train_metrics.update(output, batch['irradiance'])
-        if self.global_step % self.config.vis_iterations == 0:
-            #self.train_metrics.update(output, batch['irradiance'])
-            self.visualise(batch, output, 'train')
-
-    def train(self):
-        print('Starting training session..')
-        # set model to train mode
-        self.model.train()
-
-        self.start_time = time()
-        # runs through a train loop
-        while self.global_step < self.config.n_iterations:
-            self.global_step += 1
-            # trains a batch
-            self.train_step()
-            # once all training data has gone through (1 epoch), print  metrics
-            if (self.global_step * self.config.batch_size) % self.config.nb_training_seq == 0:
-                # evaluate model (validation data)
-                score = self.test()
-
-                if score > self.best_score:
-                    print('New best score: {:.3f} -> {:.3f}'.format(self.best_score, score))
-                    self.best_score = score
-                    self.save_checkpoint()
-                print('-' * 100)
-
-        self.tensorboard.close()
 
     def test_step(self, batch, iteration):
         # move batch to device
@@ -194,38 +138,15 @@ class Trainer:
 
     # validation print out
     def test(self):
-        print('-' * 100)
-        print('Validation')
-        print('-' * 100)
+        self.index = [7, 12, 13, 15]
+        self.sample = self.create_sample()
+        print('Images size: ', self.sample['images'].size())
+        print('Aux_data size: ', self.sample['aux_data'].size())
+        print('irradiance size: ', self.sample['irradiance'].size())
+        forecast = self.forward_model(self.sample) * 288.8 + 434.4
+        actual = self.sample['irradiance'][0] * 288.8 + 434.4
+        print(forecast.item(), actual.item())
 
-        # lets model know its in evaluation mode
-        self.model.eval()
-        val_loss = 0
-
-        # deactivates auto grad, since in validation dont need to use gradient descent
-        # runs through validation set and finds average loss
-        with torch.no_grad():
-            for iteration, batch in tqdm(enumerate(self.val_dataloader), total=len(self.val_dataloader)):
-                loss = self.test_step(batch, iteration)
-                val_loss += loss
-
-            val_loss /= len(self.val_dataloader)
-            self.tensorboard.add_scalar('val/loss', val_loss, self.global_step)
-
-        print(f'Val loss: {val_loss:.4f}')
-
-        # prints metrics
-        print('-' * 100)
-        print('Metrics')
-        print('-' * 100)
-        train_score = self.train_metrics.evaluate(self.global_step)
-        print('Train score: {:.3f}'.format(train_score))
-        val_score = self.val_metrics.evaluate(self.global_step)
-        print('Val score: {:.3f}'.format(val_score))
-
-        # sets model back to train mode
-        self.model.train()
-        return val_score
 
     def print_log(self, loss, step_duration, data_fetch_time, model_update_time):
         """Print a log statement to the terminal."""
@@ -254,14 +175,12 @@ class Trainer:
         checkpoint_name = os.path.join(self.session_name, 'checkpoint')
         map_location = 'cuda' if self.config.gpu else 'cpu'
         checkpoint = torch.load(checkpoint_name, map_location=map_location)
-        print(checkpoint['model'])
 
         self.model.load_state_dict(checkpoint['model'])
         self.optimiser.load_state_dict(checkpoint['optimiser'])
         self.global_step = checkpoint['global_step']
         self.best_score = checkpoint['best_score']
         print('Loaded model and optimiser weights from {}\n'.format(checkpoint_name))
-        print(self.model)
 
     def _get_next_batch(self):
         if self._train_dataloader_iter is None:
@@ -305,6 +224,7 @@ class Trainer:
         self.session_name = self.config.session_name
 
         # Compare git hash
+        # Comment out for now
         """current_git_hash = get_git_hash()
         with open(os.path.join(self.session_name, 'git_hash')) as f:
             previous_git_hash = f.read().splitlines()[0]
@@ -323,3 +243,6 @@ class Trainer:
         session_name = os.path.join(self.config['output_path'], session_name)
         os.makedirs(session_name)
         return session_name
+
+    def print_model(self):
+        print(self.model)

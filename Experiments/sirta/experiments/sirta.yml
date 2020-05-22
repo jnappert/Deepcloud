@@ -1,16 +1,16 @@
 output_path: 'Experiments/sirta/experiments/'
-tag: 'testing_images'
+tag: 'testing_images_1000IMAGES'
 
 #shades: 'Y'
-shades: 'Y'
+shades: 'SAT'
 IMG_SIZE: 128
-nb_training_seq: 8
-nb_validation_seq: 2  #val_iterations * batch size??
+nb_training_seq: 800
+nb_validation_seq: 200  #val_iterations * batch size??
 lookback: 1
 lookforward: 5
 
-batch_size: 1
-n_iterations: 40 #10000 # = batch_size*nb_epoch
+batch_size: 20
+n_iterations: 200 #10000 # = batch_size*nb_epoch
 print_iterations: 1 # print_iterations*batch_size = nb_training_seq (1 epoch)
 vis_iterations: 1000
 #val_iterations: 100
