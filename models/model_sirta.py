@@ -11,11 +11,12 @@ from layers.preprocessing import ImagePreprocessing
 
 
 class SirtaModel(nn.Module):
-    def __init__(self):
+    def __init__(self, channels):
         super().__init__()
+        self.channels = channels
 
         self.aux_data_model = nn.Sequential(OrderedDict([
-            ('aux_fc_1_linear', nn.Linear(8, 16)),
+            ('aux_fc_1_linear', nn.Linear(6, 16)), #input is 8 for forecasting cause of irradiances
             ('aux_fc_1_act', nn.ReLU()),
             ('aux_fc_2_linear', nn.Linear(16, 16)),
             ('aux_fc_2_act', nn.ReLU()),
@@ -26,7 +27,7 @@ class SirtaModel(nn.Module):
         # First Convblock should be 4 for shades = Y, set to 2 for SAT
         self.cnn_model_keras = nn.Sequential(OrderedDict([
              ('image_preprocessing', ImagePreprocessing()),
-             ('conv_0', ConvBlock(2, 64, stride=2, kernel_size=7, norm='none')),
+             ('conv_0', ConvBlock(channels, 64, stride=2, kernel_size=7, norm='none')),
              ('conv_1', ConvBlock(64, 32, stride=2, kernel_size=7, norm='none')),
              ('res_1', ResBlock(32, 32, kernel_size=5, norm='none')),
              ('conv_2', ConvBlock(32, 32, kernel_size=5, stride=2, norm='none')),
@@ -49,7 +50,7 @@ class SirtaModel(nn.Module):
         ]))
 
         self.cat_model_keras = nn.Sequential(OrderedDict([
-            ('cat_fc_1_linear', nn.Linear(144, 64)),
+            ('cat_fc_1_linear', nn.Linear(128, 64)), #this is 144 for forecasting, 128 for nowcasting
             ('cat_fc_1_act', nn.ReLU()),
             ('cat_fc_2_linear', nn.Linear(64, 32)),
             ('cat_fc_2_act', nn.ReLU()),
@@ -111,10 +112,10 @@ class SirtaModel(nn.Module):
         #x1 = self.cnn_resnet_model(images)
         x1 = self.cnn_model_keras(images)
 
-        x2 = self.aux_data_model(aux_data)
-        x = cat((x1, x2), dim=1)
+        #x2 = self.aux_data_model(aux_data)
+        #x = cat((x1, x2), dim=1)
 
-        x = self.cat_model_keras(x)
+        x = self.cat_model_keras(x1)
         return x
 
 # add Dropout in resnet block

@@ -25,16 +25,18 @@ from utils import Config, Logger, format_time, print_model_spec, get_git_hash
 
 class SirtaTester(Model_Test):
     def create_sample(self):
-        self.dataset = SirtaDataset(self.index, self.config.shades, self.config.IMG_SIZE, self.config.lookback, self.config.lookforward, self.config.preprocessed_dataset)
+        self.dataset = SirtaDataset(self.index, self.config.shades, self.config.IMG_SIZE, self.config.lookback,
+                                    self.config.lookforward, self.config.step, self.config.averaged_15min_dataset,
+                                    self.helper, self.config.preprocessed_dataset)
         self.sample = SirtaDataset.get_image(self.dataset, self.index)
-        show_data_batch(self.sample)
+        #show_data_batch(self.sample)
 
         return self.sample
 
 
 
     def create_model(self):
-        self.model = SirtaModel()
+        self.model = SirtaModel(self.config.lookback + 1)
 
     def create_loss(self):
         self.loss_fn = nn.MSELoss() #CrossEntropyLoss()

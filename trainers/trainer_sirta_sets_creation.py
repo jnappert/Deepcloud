@@ -8,113 +8,62 @@ from skimage import io, transform
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
+
 """Same issue with import _C module"""
 # from torchvision import transforms, utils
 import socket
 from time import sleep
 
-from data.sirta.directories import data_images_dir, data_preprocessed_images_dir
+from data.sirta.directories import data_images_dir, data_preprocessed_images_dir, data_sirta_grid
 
 
 class Sirta_seq_generator():
 
-    def __init__(self, nb_training_seq, nb_validation_seq, lookback, lookforward, computer=socket.gethostname(), preprocessed_dataset=True):
+    def __init__(self, nb_training_seq, nb_validation_seq, lookback, lookforward, step, helper,
+                 computer=socket.gethostname(), preprocessed_dataset=True):
         self.nb_training_seq = nb_training_seq
         self.nb_validation_seq = nb_validation_seq
         self.lookback = lookback
         self.lookforward = lookforward
         self.computer = computer
         self.preprocessed_dataset = preprocessed_dataset
-        self.training_seq_indexes, self.validation_seq_indexes = self.create_train_val_list(nb_training_seq, nb_validation_seq, lookback, lookforward, self.computer)
-
-
-
-    def neighbours(self, y, m, d, h, minu, pos):
-        pos = pos * 2
-
-        H = h
-        Minu = minu + pos
-        change = True
-        while change == True:
-            # if minu+pos<=58 and minu+pos>=0:
-            #    Minu = minu+pos
-            #    H=h
-            change = False
-            if Minu > 58:
-                Minu = Minu - 60
-                H = H + 1  # h<20 in the dataset
-                change = True
-            elif Minu < 0:
-                change = True
-                Minu = Minu + 60
-                H = H - 1
-        Minu = int(Minu)
-        H = int(H)
-        M = m
-        D = d
-        Y = y
-        return (Y, M, D, H, Minu)
-
-
-    def lookback_indexes(self, y, m, d, h, minu, lookback):  # return list of past samples indexes
-        list = []
-        for k in range(-lookback, 1):
-            id = self.neighbours(y, m, d, h, minu, k)
-            list.append(id)
-        return (list)
-
-
-    def lookforward_index(self, y, m, d, h, minu, lookforward):  # return index of future sample
-        id = self.neighbours(y, m, d, h, minu, lookforward)
-        return (id)
-
+        self.step = step
+        self.helper = helper
+        self.training_seq_indexes, self.validation_seq_indexes = self.create_train_val_list(nb_training_seq,
+                                                                                            nb_validation_seq, lookback,
+                                                                                            lookforward, self.computer)
 
     def find_next_seq_index(self, y, m, d, h, minu, lookback, lookforward):  # return index of the next sequence
         # pos = lookback+lookforward+10+1
-        #change when more samples
+        # change when more samples
         pos = 1  # +lookback+lookforward+1
 
-        id = self.neighbours(y, m, d, h, minu, pos)
-        return (id)
+        id = self.helper.neighbours(y, m, d, h, minu, pos)
+        return id
 
-
-    def test_seq(self, y, m, d, h, minu, lookback, lookforward, computer, preprocessed_dataset):  # check if every sample of the sequence exists
+    def test_seq(self, y, m, d, h, minu, computer):  # check if every sample of the sequence exists
 
         if self.preprocessed_dataset:
             DATADIR = data_preprocessed_images_dir(computer)
         else:
-            DATADIR = data_images_dir(computer)
+            DATADIR = data_sirta_grid(computer)
 
         ans = True
-        lb_id = self.lookback_indexes(y, m, d, h, minu, lookback)
-        lf_id = self.lookforward_index(y, m, d, h, minu, lookforward)
+        lb_id = self.helper.lookback_indexes(y, m, d, h, minu)
+        lf_id = self.helper.lookforward_index(y, m, d, h, minu)
 
         for y, m, d, h, minu in lb_id:
-            if m <= 9:
-                M = '0{}'.format(m)
-            else:
-                M = '{}'.format(m)
-            if d <= 9:
-                D = '0{}'.format(d)
-            else:
-                D = '{}'.format(d)
-            if h < 10:
-                H = '0{}'.format(h)
-            else:
-                H = '{}'.format(h)
-            if minu < 10:
-                minut = '0{}'.format(minu)
-            else:
-                minut = '{}'.format(minu)
-            folder_name = '{}/{}{}{}'.format(y, y, M, D)
-            #folder_name = '{}{}{}'.format(y, M, D)
+            Y, M, D, H, minut = self.helper.string_index(y, m, d, h, minu)
+
+            # folder_name = '{}/{}{}{}'.format(y, y, M, D)
+            folder_name = '{}'.format(Y)
             path = os.path.join(DATADIR, folder_name)
             if os.path.isdir(path) == True:
-                file_name_1 = '{}{}{}{}{}00_01.jpg'.format(y, M, D, H, minut)
-                file_name_2 = '{}{}{}{}{}00_03.jpg'.format(y, M, D, H, minut)
+                file_name_1 = 'Palaiseau_ghi_{}{}{}.csv'.format(Y, M, D)
+                # file_name_2 = '{}{}{}{}{}00_03.jpg'.format(y, M, D, H, minut)
                 path_image_1 = os.path.join(path, file_name_1)
-                path_image_2 = os.path.join(path, file_name_2)
-                if os.path.isfile(path_image_1) != True or os.path.isfile(path_image_2) != True:
+                # path_image_2 = os.path.join(path, file_name_2)
+                if os.path.isfile(path_image_1) != True:
                     # print('False image path : ', path_image_1)
                     ans = False
             else:
@@ -122,21 +71,21 @@ class Sirta_seq_generator():
                 ans = False
         return ans
 
-
-    def create_train_val_list(self, nb_training_seq, nb_validation_seq, lookback, lookforward, computer=socket.gethostname()):  # create the list of sequence indexes
+    def create_train_val_list(self, nb_training_seq, nb_validation_seq, lookback, lookforward,
+                              computer=socket.gethostname()):  # create the list of sequence indexes
 
         if self.preprocessed_dataset == True:
             DATADIR = data_preprocessed_images_dir(computer)
         else:
-            DATADIR = data_images_dir(computer)
+            DATADIR = data_sirta_grid(computer)
 
         print('Number of Sequences : ', nb_training_seq)
         print('\n>> Generation of the list of sequence indexes')
         training_list = []
         validation_list = []
-        random.seed(0.75) #
+        random.seed(0.75)  #
 
-        #dataset = '2017_2019'
+        # dataset = '2017_2019'
         dataset = '2018'
 
         if dataset == '2017_2019':
@@ -162,17 +111,16 @@ class Sirta_seq_generator():
                             D = '0{}'.format(d)
                         else:
                             D = '{}'.format(d)
-                        folder_name = '{}/{}{}{}'.format(Y, Y, M, D)
+                        folder_name = '{}'.format(Y)
                         path = os.path.join(DATADIR, folder_name)
 
-
                         if os.path.isdir(path):
-                            h = 9
-                            minu = random.randint(0, 29)
-                            minu = int(2 * minu)
+                            h = 8
+                            minu = random.randint(0, int(60 / self.step))
+                            minu = int(self.step * minu)
                             while h < 19:
 
-                                if self.test_seq(Y, m, d, h, minu, lookback, lookforward, computer, self.preprocessed_dataset):
+                                if self.test_seq(Y, m, d, h, minu, computer):
 
                                     #### To be removed
                                     # if random.random() < 0.9:
@@ -189,42 +137,35 @@ class Sirta_seq_generator():
 
         elif dataset == '2018':
             y = 2018
-            #for m in range(2, 10):  # range(1,13), m = month
-            for m in range(6, 8):  # range(1,13), m = month
-                if m <= 9:
-                    M = '0{}'.format(m)
-                else:
-                    M = '{}'.format(m)
+            # for m in range(2, 10):  # range(1,13), m = month
+            # if you wanna use sky images, month has to be from 6 - 8 and days from 1 to 6
+            for m in range(1, 13):  # range(1,13), m = month
+                #if m <= 9:
+                    #M = '0{}'.format(m)
+                #else:
+                    #M = '{}'.format(m)
 
                 for d in range(1, 32):  # d:day
-                    if random.random() < 0.5:
-                        set_id = 'training_set'
-                    else:
-                        set_id = 'validation_set'
-
-                    if d <= 9:
-                        D = '0{}'.format(d)
-                    else:
-                        D = '{}'.format(d)
-                    #folder_name = '2018{}{}'.format(M, D)
-                    folder_name = '{}/{}{}{}'.format(y, y, M, D)
+                    #if d <= 9:
+                        #D = '0{}'.format(d)
+                    #else:
+                        #D = '{}'.format(d)
+                    # folder_name = '2018{}{}'.format(M, D)
+                    folder_name = '{}'.format(y)
                     path = os.path.join(DATADIR, folder_name)
 
                     if os.path.isdir(path) == True:
                         h = 8
-                        #h = 12
-                        minu = random.randint(0, 29)
-                        #minu = 12
-                        minu = int(2 * minu)
-                        while h < 19:
-                            if self.test_seq(y, m, d, h, minu, lookback, lookforward, computer, self.preprocessed_dataset):
-
-                                #### To be removed
-                                if random.random() < 0.5:
-                                   set_id = 'training_set'
+                        # h = 12
+                        minu = random.randint(0, int(60 / self.step))
+                        # minu = 12
+                        minu = int(self.step * minu)
+                        while h < 20:
+                            if self.test_seq(y, m, d, h, minu, computer):
+                                if random.random() < 0.8:
+                                    set_id = 'training_set'
                                 else:
-                                   set_id = 'validation_set'
-                                ####
+                                    set_id = 'validation_set'
                                 if set_id == 'training_set':
                                     training_list.append([m, d, h, minu])
                                 if set_id == 'validation_set':

@@ -5,6 +5,7 @@ import socket
 from abc import ABCMeta, abstractmethod
 from time import time
 from data.sirta.SirtaDataset import show_data_batch
+from utils import Helper
 
 import yaml
 import torch
@@ -46,6 +47,11 @@ class Trainer:
             device_name = 'cuda:{}'.format(self.config.gpu_nb)
 
         self.device = torch.device(device_name) if self.config.gpu else torch.device('cpu')
+
+        ##########
+        # Helper
+        ##########
+        self.helper = Helper(self.config.lookback, self.config.lookforward, self.config.step)
 
         ##########
         # Data

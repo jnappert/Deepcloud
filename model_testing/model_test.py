@@ -4,6 +4,8 @@ import datetime
 import socket
 from abc import ABCMeta, abstractmethod
 from time import time
+import matplotlib.pyplot as plt
+from utils import Helper
 from data.sirta.SirtaDataset import show_data_batch
 
 import yaml
@@ -49,12 +51,16 @@ class Model_Test:
         self.device = torch.device(device_name) if self.config.gpu else torch.device('cpu')
 
         ##########
+        # Helper
+        ##########
+        self.helper = Helper(self.config.lookback, self.config.lookforward, self.config.step)
+
+        ##########
         # Sample
         ##########
         self.dataset = None
         self.sample = None
         self.index = None
-
 
         ##########
         # Model
@@ -137,15 +143,13 @@ class Model_Test:
         return loss.item()
 
     # validation print out
-    def test(self):
-        self.index = [7, 12, 13, 15]
+    def test(self, index):
+        self.index = index
         self.sample = self.create_sample()
-        print('Images size: ', self.sample['images'].size())
-        print('Aux_data size: ', self.sample['aux_data'].size())
-        print('irradiance size: ', self.sample['irradiance'].size())
-        forecast = self.forward_model(self.sample) * 288.8 + 434.4
-        actual = self.sample['irradiance'][0] * 288.8 + 434.4
-        print(forecast.item(), actual.item())
+        forecast = self.forward_model(self.sample) * 254.4 + 279.4
+        actual = self.sample['irradiance'][0] * 254.4 + 279.4
+        #self.visualise_nowcast(forecast.item(), actual.item())
+        return forecast.item(), actual.item()
 
 
     def print_log(self, loss, step_duration, data_fetch_time, model_update_time):
@@ -244,5 +248,23 @@ class Model_Test:
         os.makedirs(session_name)
         return session_name
 
-    def print_model(self):
-        print(self.model)
+    def visualise_nowcast(self, index):
+        self.index = index
+        self.sample = self.create_sample()
+        nowcast = self.forward_model(self.sample) * 254.4 + 279.4
+        actual = self.sample['irradiance'][0] * 254.4 + 279.4
+        """Show image with landmarks for a batch of samples."""
+        images_batch, index_batch = \
+            self.sample['images'], self.sample['index']
+
+        plt.imshow(images_batch[0, 0, :, :], vmin=0, vmax=255)
+        y = index_batch[0, 0].item()
+        m = index_batch[0, 1].item()
+        d = index_batch[0, 2].item()
+        h = index_batch[0, 3].item()
+        minu = index_batch[0, 4].item()
+        # plt.title('Batch from dataloader (Irradiance : {})'.format(irradiance_batch[i]))
+        plt.title(
+            '{}:{}, {}/{}/{}: Nowcast = {:0.2f}, Actual = {:0.2f}'.format(int(h), int(minu), int(d), int(m),
+                                                                          int(y), nowcast.item(), actual.item()))
+        plt.show()

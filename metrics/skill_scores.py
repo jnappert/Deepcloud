@@ -7,7 +7,7 @@ import data.sirta.directories
 
 class SkillScore():
 
-    def __init__(self, shades, IMG_SIZE, lookback, lookforward, training_seq_indexes, validation_seq_indexes):
+    def __init__(self, shades, IMG_SIZE, lookback, lookforward, training_seq_indexes, validation_seq_indexes, step, helper):
         self.computer = socket.gethostname()
         self.shades = shades
         self.IMG_SIZE = IMG_SIZE
@@ -15,6 +15,8 @@ class SkillScore():
         self.lookforward = lookforward
         self.training_seq_indexes = training_seq_indexes
         self.validation_seq_indexes = validation_seq_indexes
+        self.step = step
+        self.helper = helper
 
         self.MAE_train = 0
         self.MAE_normalised_train = 0
@@ -29,7 +31,10 @@ class SkillScore():
         self.rMSE_val = 0
         self.rMSE_normalised_val = 0
 
-        self.std_irradiance = 288.8
+        # minute by minute std
+        # self.std_irradiance = 288.8
+        # 15 min avg std
+        self.std_irradiance = 254.4
         self.smart_persistence_mean_error()
 
 
@@ -37,35 +42,17 @@ class SkillScore():
 
         #m, d, h, minu = self.seq_indexes[idx]
 
-        DATADIR = data.sirta.directories.data_images_dir(self.computer)
+        DATADIR = data.sirta.directories.data_sirta_grid(self.computer)
         DATADIR_IRRADIANCE = data.sirta.directories.data_irradiance_dir(self.computer)
 
-        if m <= 9:
-            M = '0{}'.format(m)
-        else:
-            M = '{}'.format(m)
+        Y, M, D, H, Minu = self.helper.string_index(y, m, d, h, minu)
 
-        if d <= 9:
-            D = '0{}'.format(d)
-        else:
-            D = '{}'.format(d)
-
-        if h < 10:
-            H = '0{}'.format(h)
-        else:
-            H = '{}'.format(h)
-
-        if minu < 10:
-            Minu = '0{}'.format(minu)
-        else:
-            Minu = '{}'.format(minu)
-
-        folder_name = '{}/{}{}{}'.format(y, y, M, D)
+        folder_name = '{}'.format(Y)
         path = os.path.join(DATADIR, folder_name)
 
         if os.path.isdir(path) == True:
 
-            irra_file_name = '{}/solys2_radflux_{}{}{}.csv'.format(y, y, M, D)
+            irra_file_name = '{}/solys2_radflux_{}{}{}.csv'.format(Y, Y, M, D)
             irra_path = os.path.join(DATADIR_IRRADIANCE, irra_file_name)
             df = pd.read_csv(irra_path)
 
@@ -79,42 +66,6 @@ class SkillScore():
 
         return irradiance_output
 
-    def lookback_indexes(self, y, m, d, h, minu):  # return list of past samples indexes
-        list = []
-        for k in range(-self.lookback, 1):
-            id = self.neighbours(y, m, d, h, minu, k)
-            list.append(id)
-        return (list)
-
-    def neighbours(self, y, m, d, h, minu, pos):
-        pos = pos * 2
-
-        H = h
-        Minu = minu + pos
-        change = True
-        while change == True:
-            # if minu+pos<=58 and minu+pos>=0:
-            #    Minu = minu+pos
-            #    H=h
-            change = False
-            if Minu > 58:
-                Minu = Minu - 60
-                H = H + 1  # h<20 in the dataset
-                change = True
-            elif Minu < 0:
-                change = True
-                Minu = Minu + 60
-                H = H - 1
-        Minu = int(Minu)
-        H = int(H)
-        M = m
-        D = d
-        Y = y
-        return (Y, M, D, H, Minu)
-
-    def lookforward_index(self, y, m, d, h, minu):  # return index of future sample
-        id = self.neighbours(y, m, d, h, minu, self.lookforward)
-        return (id)
 
     def absolute_error(self, target, forecast):
         AE = abs(target-forecast)
@@ -178,7 +129,6 @@ class SkillScore():
         #file_path = '{}{}'.format(DATADIR_CLEAR_SKY_IRRADIANCE, 'SoDa_ClearSky_2018.csv')
 
         cs_data = pd.read_csv(file_path, engine='python', skiprows=34, header=0, parse_dates=True)
-
         cs_data_irradiance = cs_data[['Date', 'Time', 'Global Horiz', 'Clear-Sky']]
 
         #print('validation_seq_indexes  :', validation_seq_indexes)
@@ -207,7 +157,7 @@ class SkillScore():
                 y = 2018
                 [m, d, h, minu] = seq_index
                 #[y, m, d, h, minu] = seq_index
-                lookback_seq_indexes = self.lookback_indexes(y, m, d, h, minu)
+                lookback_seq_indexes = self.helper.lookback_indexes(y, m, d, h, minu)
                 #print(lookback_seq_indexes)
                 data_list = []
                 lb_id = lookback_seq_indexes[-1]
@@ -217,7 +167,7 @@ class SkillScore():
                 forecast = self.smart_persistence_forecast(Y, M, D, H, Minu, cs_data_irradiance, step)
 
                 # Target
-                Y_tar, M_tar, D_tar, H_tar, Minu_tar = self.lookforward_index(Y, M, D, H, Minu)
+                Y_tar, M_tar, D_tar, H_tar, Minu_tar = self.helper.lookforward_index(Y, M, D, H, Minu)
                 target = self.get_irradiance(Y_tar, M_tar, D_tar, H_tar, Minu_tar)
 
                 #print('target : ', target)

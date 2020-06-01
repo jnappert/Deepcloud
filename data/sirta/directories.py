@@ -95,6 +95,13 @@ def data_clear_sky_irradiance_dir(computer):
     return DATADIR_CLEAR_SKY_IRRADIANCE
 
 
+def data_sirta_grid(computer):
+    if computer == 'DESKTOP-A1O805T':
+        DATA_SIRTA_GRID = 'D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Satellite/preprocessed_irradiance_data/ghi/'
+
+    return DATA_SIRTA_GRID
+
+
 #def data_experiments_dir(computer):
 
 #    if computer == 'quentin-UX330UAK-Ubuntu':

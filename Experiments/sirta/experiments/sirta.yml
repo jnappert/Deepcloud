@@ -1,16 +1,18 @@
 output_path: 'Experiments/sirta/experiments/'
-tag: 'testing_images_1000IMAGES'
+tag: 'nowcasting_test5_helio_averages'
+#tag: 'fuck'
 
 #shades: 'Y'
 shades: 'SAT'
 IMG_SIZE: 128
-nb_training_seq: 800
-nb_validation_seq: 200  #val_iterations * batch size??
-lookback: 1
-lookforward: 5
+nb_training_seq: 2500
+nb_validation_seq: 625  #val_iterations * batch size??
+lookback: 0
+lookforward: 0
+step: 15
 
-batch_size: 20
-n_iterations: 200 #10000 # = batch_size*nb_epoch
+batch_size: 5
+n_iterations: 10000 #10000 # = batch_size*nb_epoch
 print_iterations: 1 # print_iterations*batch_size = nb_training_seq (1 epoch)
 vis_iterations: 1000
 #val_iterations: 100
@@ -18,10 +20,11 @@ n_workers: 8 #normally 4
 gpu: False
 gpu_nb: 0
 preprocessed_dataset: False
+averaged_15min_dataset: True
 
 # Optimiser
 learning_rate: 0.0005
-weight_decay: 0.0001
+weight_decay: 0.000
 
 #python run_training.py --config Experiments/sirta/experiments/sirta.yml
 
@@ -31,7 +34,7 @@ weight_decay: 0.0001
 
 #tensorboard --logdir=C:/Users/julia/OneDrive/Documents/Cambridge Work/Dissertation/Experiments/sirta/experiments/
 # use this one
-#python -m tensorboard.main --logdir=/Experiments/sirta/experiments/
+#python -m tensorboard.main --logdir=Experiments/sirta/experiments/
 #python -m tensorboard.main --logdir=C:/Users/julia/OneDrive/Documents/Cambridge Work/Dissertation/Experiments/sirta/experiments/
 #tensorboard --logdir=C:/Users/julia/OneDrive/Documents/Cambridge Work/Dissertation/Experiments/sirta/experiments/ --host localhost
 

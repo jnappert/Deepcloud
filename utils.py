@@ -35,6 +35,70 @@ class Logger(object):
         self.log.close()
 
 
+class Helper:
+    def __init__(self, lookback, lookforward, step):
+        self.lookback = lookback
+        self.lookforward = lookforward
+        self.step = step
+
+    def lookforward_index(self, y, m, d, h, minu):  # return index of future sample
+        id = self.neighbours(y, m, d, h, minu, self.lookforward)
+        return (id)
+
+    def lookback_indexes(self, y, m, d, h, minu):  # return list of past samples indexes
+        list = []
+        for k in range(-self.lookback, 1):
+            id = self.neighbours(y, m, d, h, minu, k)
+            list.append(id)
+        return (list)
+
+    def neighbours(self, y, m, d, h, minu, pos):
+        pos = pos * self.step
+        H = h
+        Minu = minu + pos
+        change = True
+        while change == True:
+            change = False
+            if Minu > 59:
+                H = H + int(Minu / 60)
+                Minu = Minu % 60
+                change = True
+            elif Minu < 0:
+                change = True
+                H = H + int(Minu / 60) - 1
+                Minu = Minu % 60
+        Minu = int(Minu)
+        H = int(H)
+        M = m
+        D = d
+        Y = y
+        return Y, M, D, H, Minu
+
+    def string_index(self, y, m, d, h, minu):
+        Y = '{}'.format(y)
+        if m <= 9:
+            M = '0{}'.format(m)
+        else:
+            M = '{}'.format(m)
+
+        if d <= 9:
+            D = '0{}'.format(d)
+        else:
+            D = '{}'.format(d)
+
+        if h < 10:
+            H = '0{}'.format(h)
+        else:
+            H = '{}'.format(h)
+
+        if minu < 10:
+            Minu = '0{}'.format(minu)
+        else:
+            Minu = '{}'.format(minu)
+
+        return Y, M, D, H, Minu
+
+
 def get_git_hash():
     repository = git.Repo()
     git_hash = repository.head.object.hexsha

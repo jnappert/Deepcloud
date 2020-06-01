@@ -12,7 +12,10 @@ class RegMetrics:
         self.n_batch = 0
         self.skill_score = skill_score
 
-        self.std_irradiance = 288.8
+        # minute by minute std
+        #self.std_irradiance = 288.8
+        # 15 min avg std
+        self.std_irradiance = 254.4
 
     def update(self, pred, target):
         pred = pred.detach().cpu().numpy()
@@ -61,7 +64,7 @@ class RegMetrics:
             #'FS_MSE': 1 - scores[0]/self.skill_score.MSE_normalised_val,
             'rMSE': np.sqrt(scores[0]*self.std_irradiance**2),
             #'FS_rMSE': 1 - np.sqrt(scores[0]/self.skill_score.MSE_normalised_val),
-            'MAE': scores[1]*self.std_irradiance#,
+            'MAE': scores[1]*self.std_irradiance,
             #'FS_MAE': 1 - scores[1]/self.skill_score.MAE_normalised_val
         }
         with open(filename, 'w', encoding='utf-8') as f:
