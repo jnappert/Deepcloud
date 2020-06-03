@@ -15,7 +15,7 @@ class RegMetrics:
         # minute by minute std
         #self.std_irradiance = 288.8
         # 15 min avg std
-        self.std_irradiance = 254.4
+        self.std_irradiance = 296.16
 
     def update(self, pred, target):
         pred = pred.detach().cpu().numpy()

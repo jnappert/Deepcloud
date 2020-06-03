@@ -26,11 +26,11 @@ class SirtaTrainer(Trainer):
 
     def create_data(self):
         sirta_sets_idx = Sirta_seq_generator(self.config.nb_training_seq, self.config.nb_validation_seq,
-                                             self.config.lookback, self.config.lookforward, self.config.step,
+                                             self.config.lookback, self.config.lookforward, self.config.step, self.config.averaged_15min_dataset,
                                              self.helper, socket.gethostname(), self.config.preprocessed_dataset)
 
-        self.training_seq_indexes, self.validation_seq_indexes = sirta_sets_idx.training_seq_indexes, \
-                                                                 sirta_sets_idx.validation_seq_indexes
+        self.training_seq_indexes, self.validation_seq_indexes, self.mean, self.std = sirta_sets_idx.training_seq_indexes, \
+                                                                 sirta_sets_idx.validation_seq_indexes, sirta_sets_idx.mean, sirta_sets_idx.std
 
         # Smart Persistence
         self.skill_score = SkillScore(self.config.shades, self.config.IMG_SIZE, self.config.lookback,
@@ -39,11 +39,11 @@ class SirtaTrainer(Trainer):
 
         self.train_dataset = SirtaDataset(self.training_seq_indexes, self.config.shades, self.config.IMG_SIZE,
                                           self.config.lookback, self.config.lookforward, self.config.step,
-                                          self.config.averaged_15min_dataset, self.helper,
+                                          self.config.averaged_15min_dataset, self.mean, self.std, self.helper,
                                           self.config.preprocessed_dataset)
         self.val_dataset = SirtaDataset(self.validation_seq_indexes, self.config.shades, self.config.IMG_SIZE,
                                         self.config.lookback, self.config.lookforward, self.config.step,
-                                        self.config.averaged_15min_dataset, self.helper,
+                                        self.config.averaged_15min_dataset, self.mean, self.std, self.helper,
                                         self.config.preprocessed_dataset)
 
         # self.train_dataset = SirtaDataset(mode='train')

@@ -26,7 +26,7 @@ from utils import Config, Logger, format_time, print_model_spec, get_git_hash
 class SirtaTester(Model_Test):
     def create_sample(self):
         self.dataset = SirtaDataset(self.index, self.config.shades, self.config.IMG_SIZE, self.config.lookback,
-                                    self.config.lookforward, self.config.step, self.config.averaged_15min_dataset,
+                                    self.config.lookforward, self.config.step, self.config.averaged_15min_dataset, self.mean, self.std,
                                     self.helper, self.config.preprocessed_dataset)
         self.sample = SirtaDataset.get_image(self.dataset, self.index)
         #show_data_batch(self.sample)

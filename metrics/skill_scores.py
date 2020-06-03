@@ -34,7 +34,7 @@ class SkillScore():
         # minute by minute std
         # self.std_irradiance = 288.8
         # 15 min avg std
-        self.std_irradiance = 254.4
+        self.std_irradiance = 296.16
         self.smart_persistence_mean_error()
 
 

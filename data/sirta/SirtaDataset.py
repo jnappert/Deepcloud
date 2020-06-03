@@ -29,7 +29,7 @@ from data.sirta.directories import data_images_dir, data_irradiance_dir, data_pr
 class SirtaDataset(Dataset):
     """Sirta dataset."""
 
-    def __init__(self, seq_indexes, shades, IMG_SIZE, lookback, lookforward, step, averaged_15min_dataset, helper, preprocessed_dataset=True, transform=None):
+    def __init__(self, seq_indexes, shades, IMG_SIZE, lookback, lookforward, step, averaged_15min_dataset, mean, std, helper, preprocessed_dataset=True, transform=None):
         # def __init__(self, computer, nb_training_seq, lookback, lookforward, mode=None, transform=None):
         """
         Args:
@@ -53,6 +53,8 @@ class SirtaDataset(Dataset):
         self.preprocessed_dataset = preprocessed_dataset
         self.step = step
         self.averaged_15min_dataset = averaged_15min_dataset
+        self.mean = mean
+        self.std = std
         self.helper = helper
 
         # self.training_seq_idexes = []
@@ -155,8 +157,11 @@ class SirtaDataset(Dataset):
                 #mean_irradiance = 434.4
                 #std_irradiance = 288.8
                 # mean/std for 15 min avg
-                mean_irradiance = 279.4
-                std_irradiance = 254.4
+                #mean_irradiance = 471.0
+                #std_irradiance = 281.5
+                # self
+                mean_irradiance = self.mean
+                std_irradiance = self.std
 
 
                 target = (target - mean_irradiance) / std_irradiance
@@ -367,7 +372,7 @@ def get_sat_grid(y, m, d, h, minu):
 
 
 # Helper function to show a batch
-def show_data_batch(sample_batched):
+def show_data_batch(sample_batched, mean, std):
     """Show image with landmarks for a batch of samples."""
     images_batch, irradiance_batch, aux_data_batch, index_batch = \
         sample_batched['images'], sample_batched['irradiance'], sample_batched['aux_data'], sample_batched['index']
@@ -391,7 +396,7 @@ def show_data_batch(sample_batched):
         #plt.title('{}:{}, {}/{}/{}: Irradiance = {:0.2f}, Target = {:0.2f}'.format(str(h), str(minu), str(d), str(m), str(y),aux_data_batch[0][i + 6] * 288.8 + 434.4, irradiance_batch[0][0] * 288.8 + 434.4))
         plt.title(
             '{}:{}, {}/{}/{}: Irradiance = {:0.2f}'.format(str(h), str(minu), str(d), str(m), str(y),
-                                                                             irradiance_batch[0][0] * 254.4 + 279.4))
+                                                                             irradiance_batch[0][0] * std + mean))
         plt.show()
 
 

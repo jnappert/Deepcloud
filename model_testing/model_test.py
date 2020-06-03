@@ -63,6 +63,19 @@ class Model_Test:
         self.index = None
 
         ##########
+        # Mean and Standard Deviation
+        ##########
+        # original
+        #self.mean = 434.4
+        #self.std = 288.8
+        # latest
+        #self.mean = 471.0
+        #self.std = 281.5
+        # 5000 minute by minute
+        self.mean = 351.33
+        self.std = 296.16
+
+        ##########
         # Model
         ##########
         self.model = None
@@ -146,9 +159,8 @@ class Model_Test:
     def test(self, index):
         self.index = index
         self.sample = self.create_sample()
-        forecast = self.forward_model(self.sample) * 254.4 + 279.4
-        actual = self.sample['irradiance'][0] * 254.4 + 279.4
-        #self.visualise_nowcast(forecast.item(), actual.item())
+        forecast = self.forward_model(self.sample) * self.std + self.mean
+        actual = self.sample['irradiance'][0] * self.std + self.mean
         return forecast.item(), actual.item()
 
 
@@ -251,8 +263,8 @@ class Model_Test:
     def visualise_nowcast(self, index):
         self.index = index
         self.sample = self.create_sample()
-        nowcast = self.forward_model(self.sample) * 254.4 + 279.4
-        actual = self.sample['irradiance'][0] * 254.4 + 279.4
+        nowcast = self.forward_model(self.sample) * self.std + self.mean
+        actual = self.sample['irradiance'][0] * self.std + self.mean
         """Show image with landmarks for a batch of samples."""
         images_batch, index_batch = \
             self.sample['images'], self.sample['index']

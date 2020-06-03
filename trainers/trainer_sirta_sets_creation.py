@@ -14,12 +14,13 @@ from torch.utils.data import Dataset, DataLoader
 import socket
 from time import sleep
 
-from data.sirta.directories import data_images_dir, data_preprocessed_images_dir, data_sirta_grid
+from data.sirta.directories import data_images_dir, data_preprocessed_images_dir, data_sirta_grid, \
+    data_clear_sky_irradiance_dir, data_irradiance_dir
 
 
 class Sirta_seq_generator():
 
-    def __init__(self, nb_training_seq, nb_validation_seq, lookback, lookforward, step, helper,
+    def __init__(self, nb_training_seq, nb_validation_seq, lookback, lookforward, step, averaged_15min_dataset, helper,
                  computer=socket.gethostname(), preprocessed_dataset=True):
         self.nb_training_seq = nb_training_seq
         self.nb_validation_seq = nb_validation_seq
@@ -28,8 +29,9 @@ class Sirta_seq_generator():
         self.computer = computer
         self.preprocessed_dataset = preprocessed_dataset
         self.step = step
+        self.averaged_15min_dataset = averaged_15min_dataset
         self.helper = helper
-        self.training_seq_indexes, self.validation_seq_indexes = self.create_train_val_list(nb_training_seq,
+        self.training_seq_indexes, self.validation_seq_indexes, self.mean, self.std = self.create_train_val_list(nb_training_seq,
                                                                                             nb_validation_seq, lookback,
                                                                                             lookforward, self.computer)
 
@@ -66,10 +68,44 @@ class Sirta_seq_generator():
                 if os.path.isfile(path_image_1) != True:
                     # print('False image path : ', path_image_1)
                     ans = False
+                elif minu > 59:
+                    ans = False
             else:
                 print('False path: ', path)
                 ans = False
         return ans
+
+    def get_mean_std(self, list):
+        irradiances = []
+        if self.averaged_15min_dataset:
+            DATADIR_HELIO_IRRADIANCE = data_clear_sky_irradiance_dir(self.computer)
+            helio_path = '{}{}'.format(DATADIR_HELIO_IRRADIANCE,
+                                       'SoDa_HC3-METEO_lat48.713_lon2.209_2015-01-01_2018-12-31_1266955311.csv')
+            helio_data = pd.read_csv(helio_path, header=34, usecols=['Date', 'Time', 'Global Horiz'])
+
+            for [m, d, h, minu] in list:
+                Y, M, D, H, Minu = self.helper.string_index(2018, m, d, h, minu)
+                date_id = '{}-{}-{}'.format(Y, M, D)
+                time_id = '{}:{}'.format(H, Minu)
+                helio_data_irradiance_date = helio_data[helio_data['Date'] == date_id]
+                helio_data_irradiance_time = helio_data_irradiance_date[helio_data_irradiance_date['Time'] == time_id]
+                irradiance = float(helio_data_irradiance_time['Global Horiz']) * 4
+                irradiances.append(irradiance)
+        else:
+            DATADIR_IRRADIANCE = data_irradiance_dir(self.computer)
+            for [m, d, h, minu] in list:
+                Y, M, D, H, Minu = self.helper.string_index(2018, m, d, h, minu)
+                irra_file_name = '{}/solys2_radflux_{}{}{}.csv'.format(Y, Y, M, D)
+                irra_path = os.path.join(DATADIR_IRRADIANCE, irra_file_name)
+                df = pd.read_csv(irra_path, usecols=['global_solar_flux'])
+                min_1440 = minu + 60 * h
+                irradiance = df['global_solar_flux'][min_1440]
+                irradiances.append(irradiance)
+
+        mean = np.mean(irradiances)
+        std = np.std(irradiances)
+
+        return mean, std
 
     def create_train_val_list(self, nb_training_seq, nb_validation_seq, lookback, lookforward,
                               computer=socket.gethostname()):  # create the list of sequence indexes
@@ -83,6 +119,8 @@ class Sirta_seq_generator():
         print('\n>> Generation of the list of sequence indexes')
         training_list = []
         validation_list = []
+        irradiances = []
+        mean = False
         random.seed(0.75)  #
 
         # dataset = '2017_2019'
@@ -139,7 +177,7 @@ class Sirta_seq_generator():
             y = 2018
             # for m in range(2, 10):  # range(1,13), m = month
             # if you wanna use sky images, month has to be from 6 - 8 and days from 1 to 6
-            for m in range(1, 13):  # range(1,13), m = month
+            for m in range(3, 11):  # range(1,13), m = month
                 #if m <= 9:
                     #M = '0{}'.format(m)
                 #else:
@@ -157,7 +195,7 @@ class Sirta_seq_generator():
                     if os.path.isdir(path) == True:
                         h = 8
                         # h = 12
-                        minu = random.randint(0, int(60 / self.step))
+                        minu = random.randint(0, int(60 / self.step) - 1)
                         # minu = 12
                         minu = int(self.step * minu)
                         while h < 20:
@@ -185,6 +223,10 @@ class Sirta_seq_generator():
         print('\nNumber of Sequences in the training list :', len(training_seq_indexes))
         print('Number of Sequences in the validation list :', len(validation_seq_indexes))
 
+        mean, std = self.get_mean_std(training_seq_indexes)
+        print('\nTraining Sequences mean : {:0.2f}'.format(mean))
+        print('Training Sequences standard deviation : {:0.2f}'.format(std))
+
         print('\nTraining and validation List of sequence indexes created')
 
-        return training_seq_indexes, validation_seq_indexes
+        return training_seq_indexes, validation_seq_indexes, mean, std

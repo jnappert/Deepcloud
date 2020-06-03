@@ -129,7 +129,7 @@ class Trainer:
         t0 = time()
         batch = self._get_next_batch()
         # just to visualize images
-        #show_data_batch(batch)
+        #show_data_batch(batch, self.mean)
         # cast to device
         self.preprocess_batch(batch)
         data_fetch_time = time() - t0
