@@ -11,6 +11,7 @@ import yaml
 import torch
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
+import matplotlib.pyplot as plt
 
 from utils import Config, Logger, format_time, print_model_spec, get_git_hash
 
@@ -24,6 +25,7 @@ class Trainer:
         # Trainer utils
         ##########
         self.global_step = 0
+        self.epoch = 0
         self.start_time = None
         self.best_score = -float('inf')
 
@@ -60,6 +62,10 @@ class Trainer:
         self.train_dataloader, self.val_dataloader = None, None
         self._train_dataloader_iter = None
         self.create_data()
+        self.mean, self.std = self.mean_std()
+        self.config.mean = self.mean
+        self.config.std = self.std
+        self.add_mean_std_to_session()
 
         ##########
         # Model
@@ -92,9 +98,19 @@ class Trainer:
         if self.options.restore:
             self.load_checkpoint()
 
+        # Testing Indexes
+        self.index = None
+        self.testing_indexes = [[2017, 1, 30], [2017, 4, 15], [2017, 7, 12], [2017, 10, 15]]
+        for Y, M, D in self.testing_indexes:
+            os.mkdir(os.path.join(self.session_name, '{}_{}_{}'.format(D, M, Y)))
+
     @abstractmethod
     def create_data(self):
         """Create train/val datasets and dataloaders."""
+
+    @abstractmethod
+    def mean_std(self):
+        """"Return mean and standard deviation of training set"""
 
     @abstractmethod
     def create_model(self):
@@ -124,12 +140,16 @@ class Trainer:
     def visualise(self, batch, output, mode):
         """Visualise inputs and outputs on tensorboard."""
 
+    @abstractmethod
+    def create_sample(self):
+        """Creates a sample."""
+
     def train_step(self):
         # Fetch data
         t0 = time()
         batch = self._get_next_batch()
         # just to visualize images
-        #show_data_batch(batch, self.mean)
+        #show_data_batch(batch, self.mean, self.std)
         # cast to device
         self.preprocess_batch(batch)
         data_fetch_time = time() - t0
@@ -171,8 +191,11 @@ class Trainer:
             self.train_step()
             # once all training data has gone through (1 epoch), print  metrics
             if (self.global_step * self.config.batch_size) % self.config.nb_training_seq == 0:
+                self.epoch += 1
                 # evaluate model (validation data)
                 score = self.test()
+                #evaluate sample here
+                self.evaluate_epoch()
 
                 if score > self.best_score:
                     print('New best score: {:.3f} -> {:.3f}'.format(self.best_score, score))
@@ -232,6 +255,42 @@ class Trainer:
         # sets model back to train mode
         self.model.train()
         return val_score
+
+    def evaluate_epoch(self):
+        self.model.eval()
+        for [Y, M, D] in self.testing_indexes:
+            time = []
+            nowcast = []
+            actual = []
+            for H in range(5, 19):
+                for i in range(0, 4):
+                    Minu = i * 15
+                    self.index = [Y, M, D, H, Minu]
+                    n, a = self.evaluate_sample()
+                    _, _, _, H_lf, Minu_lf = self.helper.lookforward_index(Y, M, D, H, Minu)
+                    _, _, _, _, Minu_lf = self.helper.string_index(Y, M, D, H_lf, Minu_lf)
+                    time.append('{}:{}'.format(H_lf, Minu_lf))
+                    nowcast.append(n)
+                    actual.append(a)
+            plt.plot(time, actual)
+            plt.plot(time, nowcast)
+            plt.title('EPOCH: {}. {}/{}/{}'.format(self.epoch, D, M, Y))
+            plt.legend(['actual', 'forecast'])
+            plt.xticks(
+                ['5:00', '6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
+                 '17:00', '18:00', '19:00', '20:00'], rotation=90)
+            fname = os.path.join(self.session_name, '{}_{}_{}/Epoch_{}.png'.format(D, M, Y, self.epoch))
+            plt.savefig(fname)
+            plt.close()
+
+        self.model.train()
+
+    def evaluate_sample(self):
+        self.sample = self.create_sample()
+        forecast = self.forward_model(self.sample) * self.std + self.mean
+        actual = self.sample['irradiance'][0] * self.std + self.mean
+        return forecast.item(), actual.item()
+
 
     def print_log(self, loss, step_duration, data_fetch_time, model_update_time):
         """Print a log statement to the terminal."""
@@ -302,6 +361,12 @@ class Trainer:
 
         # Save terminal outputs
         sys.stdout = Logger(os.path.join(self.session_name, 'logs.txt'))
+
+    def add_mean_std_to_session(self):
+        mean_std_config = {'mean': float(round(self.mean, 2)), 'std': float(round(self.std, 2))}
+        with open(os.path.join(self.session_name, 'config.yml'), 'a') as f:
+            yaml.dump(mean_std_config, f)
+
 
     def restore_session(self):
         config_path = os.path.join(self.options.restore, 'config.yml')

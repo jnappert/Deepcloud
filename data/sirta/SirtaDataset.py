@@ -103,7 +103,7 @@ class SirtaDataset(Dataset):
 
                 if helio:
                     helio_path = '{}{}'.format(DATADIR_HELIO_IRRADIANCE,
-                                               'SoDa_HC3-METEO_lat48.713_lon2.209_2015-01-01_2018-12-31_1266955311.csv')
+                                               'SoDa_HC3-METEO_lat48.713_lon2.209_2017-01-01_2018-12-31_1266955311.csv')
 
                     helio_data = pd.read_csv(helio_path, header=34, usecols=['Date', 'Time', 'Global Horiz'])
                     # using python engine but much slower
@@ -111,7 +111,7 @@ class SirtaDataset(Dataset):
                     #helio_data_irradiance = helio_data[['Date', 'Time', 'Global Horiz', 'Clear-Sky']]
 
                     date_id = '{}-{}-{}'.format(Y, M, D)
-                    time_id = '{}:{}'.format(H, Minu)
+                    time_id = '{}:{}'.format(h, Minu)
 
                     helio_data_irradiance_date = helio_data[helio_data['Date'] == date_id]
                     helio_data_irradiance_time = helio_data_irradiance_date[helio_data_irradiance_date['Time'] == time_id]
@@ -143,7 +143,7 @@ class SirtaDataset(Dataset):
 
                 if helio:
                     target_date_id = '{}-{}-{}'.format(Y_target, M_target, D_target)
-                    target_time_id = '{}:{}'.format(H_target, Minu_target)
+                    target_time_id = '{}:{}'.format(h_target, Minu_target)
 
                     helio_data_irradiance_date = helio_data[helio_data['Date'] == target_date_id]
                     helio_data_irradiance_time = helio_data_irradiance_date[
@@ -296,8 +296,8 @@ class SirtaDataset(Dataset):
         else:
             # totensor = ToTensor()
             sample = {
-                'images': torch.from_numpy((past_images[-1])), #need to concatenate and include past_images[-0] for forecasting
-                'aux_data': np.array(aux_data), #need past irradiances for forecasting
+                'images': torch.from_numpy(np.concatenate((past_images[-0], past_images[-1]))), #need to concatenate and include past_images[-0] for forecasting
+                'aux_data': np.array(aux_data + past_irradiances), #need past irradiances for forecasting
                 'irradiance': np.array([target]),
                 'index': np.array(samples_list_indexes)}
             # sample = {'images': torch.from_numpy(new_array_1).float(), 'aux_data': np.array(aux_data),'irradiance': np.array([target])}

@@ -50,10 +50,13 @@ class Helper:
         for k in range(-self.lookback, 1):
             id = self.neighbours(y, m, d, h, minu, k)
             list.append(id)
-        return (list)
+        return list
 
-    def neighbours(self, y, m, d, h, minu, pos):
-        pos = pos * self.step
+    def neighbours(self, y, m, d, h, minu, pos, set_creation=False):
+        if set_creation:
+            pos = pos * 15
+        else:
+            pos = pos * self.step
         H = h
         Minu = minu + pos
         change = True

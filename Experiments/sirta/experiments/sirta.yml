@@ -1,19 +1,20 @@
 output_path: 'Experiments/sirta/experiments/'
-tag: 'nowcasting_min_by_min_5000images_months3+10'
-#tag: 'fuck'
+#tag: 'nowcasting_15minavg_5000images_months3+10'
+tag: 'fuck_forecast'
+#tag: '100_epochs'
 
 #shades: 'Y'
 shades: 'SAT'
 IMG_SIZE: 128
 nb_training_seq: 5000 #2500
 nb_validation_seq: 1250 #625  #val_iterations * batch size??
-lookback: 0
-lookforward: 0
+lookback: 1
+lookforward: 2
 step: 15
 
 #epoch = n_iterations/nb_training*batch size
 batch_size: 10 # 5
-n_iterations: 10000 #10000 # = batch_size*nb_epoch
+n_iterations: 50000 #10000 # = batch_size*nb_epoch
 print_iterations: 1 # print_iterations*batch_size = nb_training_seq (1 epoch)
 vis_iterations: 1000
 #val_iterations: 100
@@ -21,17 +22,12 @@ n_workers: 8 #normally 4
 gpu: False
 gpu_nb: 0
 preprocessed_dataset: False
-averaged_15min_dataset: False
+averaged_15min_dataset: True
 
 # Optimiser
 learning_rate: 0.0005
 weight_decay: 0.000
 
-# Mean and STD
-#mean_2018: 277.1
-#std_2018: 267.4
-#mean_2018_mayaug: 471.0
-#std_2018_mayaug: 281.5
 
 #python run_training.py --config Experiments/sirta/experiments/sirta.yml
 

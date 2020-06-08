@@ -40,7 +40,7 @@ class Sirta_seq_generator():
         # change when more samples
         pos = 1  # +lookback+lookforward+1
 
-        id = self.helper.neighbours(y, m, d, h, minu, pos)
+        id = self.helper.neighbours(y, m, d, h, minu, pos, True)
         return id
 
     def test_seq(self, y, m, d, h, minu, computer):  # check if every sample of the sequence exists
@@ -80,13 +80,13 @@ class Sirta_seq_generator():
         if self.averaged_15min_dataset:
             DATADIR_HELIO_IRRADIANCE = data_clear_sky_irradiance_dir(self.computer)
             helio_path = '{}{}'.format(DATADIR_HELIO_IRRADIANCE,
-                                       'SoDa_HC3-METEO_lat48.713_lon2.209_2015-01-01_2018-12-31_1266955311.csv')
+                                       'SoDa_HC3-METEO_lat48.713_lon2.209_2017-01-01_2018-12-31_1266955311.csv')
             helio_data = pd.read_csv(helio_path, header=34, usecols=['Date', 'Time', 'Global Horiz'])
 
             for [m, d, h, minu] in list:
                 Y, M, D, H, Minu = self.helper.string_index(2018, m, d, h, minu)
                 date_id = '{}-{}-{}'.format(Y, M, D)
-                time_id = '{}:{}'.format(H, Minu)
+                time_id = '{}:{}'.format(h, Minu)
                 helio_data_irradiance_date = helio_data[helio_data['Date'] == date_id]
                 helio_data_irradiance_time = helio_data_irradiance_date[helio_data_irradiance_date['Time'] == time_id]
                 irradiance = float(helio_data_irradiance_time['Global Horiz']) * 4
@@ -177,7 +177,7 @@ class Sirta_seq_generator():
             y = 2018
             # for m in range(2, 10):  # range(1,13), m = month
             # if you wanna use sky images, month has to be from 6 - 8 and days from 1 to 6
-            for m in range(3, 11):  # range(1,13), m = month
+            for m in range(1, 13):  # range(1,13), m = month
                 #if m <= 9:
                     #M = '0{}'.format(m)
                 #else:
@@ -193,12 +193,13 @@ class Sirta_seq_generator():
                     path = os.path.join(DATADIR, folder_name)
 
                     if os.path.isdir(path) == True:
-                        h = 8
+                        h = 9
                         # h = 12
                         minu = random.randint(0, int(60 / self.step) - 1)
                         # minu = 12
                         minu = int(self.step * minu)
-                        while h < 20:
+                        minu = 0
+                        while h < 18:
                             if self.test_seq(y, m, d, h, minu, computer):
                                 if random.random() < 0.8:
                                     set_id = 'training_set'
@@ -223,7 +224,7 @@ class Sirta_seq_generator():
         print('\nNumber of Sequences in the training list :', len(training_seq_indexes))
         print('Number of Sequences in the validation list :', len(validation_seq_indexes))
 
-        mean, std = self.get_mean_std(training_seq_indexes)
+        mean, std = self.get_mean_std(training_list)
         print('\nTraining Sequences mean : {:0.2f}'.format(mean))
         print('Training Sequences standard deviation : {:0.2f}'.format(std))
 

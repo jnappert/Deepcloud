@@ -103,7 +103,7 @@ class SkillScore():
 
             [y, m, d, h, min] = new_indexes
             date_id = '{}-{}-{}'.format(y, m, d)
-            time_id = '{}:{}'.format(h, min)
+            time_id = '{}:{}'.format(H, min)
 
             cs_data_irradiance_date = cs_data_irradiance[cs_data_irradiance['Date'] == date_id]
             cs_data_irradiance_time = cs_data_irradiance_date[cs_data_irradiance_date['Time'] == time_id]
@@ -125,11 +125,13 @@ class SkillScore():
     def smart_persistence_mean_error(self): #layer_size, nb_training_seq, nb_epochs, update_frequency, learning_rate, decay_rate, batch_size,
 
         DATADIR_CLEAR_SKY_IRRADIANCE = data.sirta.directories.data_clear_sky_irradiance_dir(self.computer)
-        file_path = '{}{}'.format(DATADIR_CLEAR_SKY_IRRADIANCE, 'SoDa_HC3-METEO_lat48.713_lon2.209_2015-01-01_2018-12-31_1266955311.csv')
+        file_path = '{}{}'.format(DATADIR_CLEAR_SKY_IRRADIANCE, 'SoDa_HC3-METEO_lat48.713_lon2.209_2017-01-01_2018-12-31_1266955311.csv')
         #file_path = '{}{}'.format(DATADIR_CLEAR_SKY_IRRADIANCE, 'SoDa_ClearSky_2018.csv')
 
         cs_data = pd.read_csv(file_path, engine='python', skiprows=34, header=0, parse_dates=True)
         cs_data_irradiance = cs_data[['Date', 'Time', 'Global Horiz', 'Clear-Sky']]
+        #cs_data_irradiance = pd.read_csv(file_path, header=34, usecols=['Date', 'Time', 'Global Horiz', 'Clear-Sky'])
+
 
         #print('validation_seq_indexes  :', validation_seq_indexes)
 

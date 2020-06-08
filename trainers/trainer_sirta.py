@@ -59,6 +59,9 @@ class SirtaTrainer(Trainer):
         self.val_dataloader = DataLoader(self.val_dataset, self.config.batch_size,
                                          num_workers=workers, shuffle=False)
 
+    def mean_std(self):
+        return self.mean, self.std
+
     def create_model(self):
         self.model = SirtaModel(self.config.lookback + 1)
 
@@ -87,6 +90,14 @@ class SirtaTrainer(Trainer):
         # self.tensorboard.add_images(mode + '/images_long', unsqueeze(batch['images'][:,1,:,:],1), self.global_step, dataformats='NCHW')
 
         # self.tensorboard.add_images(mode + '/images', batch_images, self.global_step, dataformats='NCHW')
+
+    def create_sample(self):
+        self.dataset = SirtaDataset(self.index, self.config.shades, self.config.IMG_SIZE, self.config.lookback,
+                                    self.config.lookforward, self.config.step, self.config.averaged_15min_dataset, self.mean, self.std,
+                                    self.helper, self.config.preprocessed_dataset)
+        self.sample = SirtaDataset.get_image(self.dataset, self.index)
+
+        return self.sample
 
 # nb_training_seq = 1000
 # nb_validation_seq = 200

@@ -72,8 +72,18 @@ class Model_Test:
         #self.mean = 471.0
         #self.std = 281.5
         # 5000 minute by minute
-        self.mean = 351.33
-        self.std = 296.16
+        #self.mean = 351.33
+        #self.std = 296.16
+        # 5000 15 min avg
+        #self.mean = 369.78
+        #self.std = 275.18
+        # newest
+        #self.mean = 445.53
+        #self.std = 271.38
+        # from file
+        self.mean = self.config.mean
+        self.std = self.config.std
+        print(self.mean, self.std)
 
         ##########
         # Model
@@ -108,7 +118,7 @@ class Model_Test:
 
     @abstractmethod
     def create_sample(self):
-        """Create train/val datasets and dataloaders."""
+        """Creates a sample."""
 
     @abstractmethod
     def create_model(self):

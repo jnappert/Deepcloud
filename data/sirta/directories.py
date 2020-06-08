@@ -58,6 +58,8 @@ def data_irradiance_dir(computer):
 
     if computer == 'DESKTOP-A1O805T':
         DATADIR_IRRADIANCE = "D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Sirta/Irradiance/solys2/preprocessed_irradiance_data/"  # Julian's
+    elif computer == 'DESKTOP-2OUOK5M':
+        DATADIR_IRRADIANCE = "C:/Users/nappe/Documents/Julian/Dissertation/solys2/"  # Dad's
     elif computer == 'quentin-UX330UAK-Ubuntu':
         DATADIR_IRRADIANCE = "/home/quentin/Documents/Cambridge/Research_project/Datasets/Sirta/Irradiance/solys2/preprocessed_irradiance_data/"
     elif computer == 'Nutmeg' or computer == 'Gpu_hpc':
@@ -80,6 +82,8 @@ def data_clear_sky_irradiance_dir(computer):
 
     if computer == 'DESKTOP-A1O805T':
         DATADIR_CLEAR_SKY_IRRADIANCE = "D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Helio/"  # Julian's
+    elif computer == 'DESKTOP-2OUOK5M':
+        DATADIR_CLEAR_SKY_IRRADIANCE = "C:/Users/nappe/Documents/Julian/Dissertation/Helio/"  # Dad's
     elif computer == 'quentin-UX330UAK-Ubuntu':
         DATADIR_CLEAR_SKY_IRRADIANCE = "/home/quentin/Documents/Cambridge/Research_project/Datasets/Helio/"
     elif computer == 'Nutmeg' or computer == 'Gpu_hpc':
@@ -98,6 +102,9 @@ def data_clear_sky_irradiance_dir(computer):
 def data_sirta_grid(computer):
     if computer == 'DESKTOP-A1O805T':
         DATA_SIRTA_GRID = 'D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Satellite/preprocessed_irradiance_data/ghi/'
+    elif computer == 'DESKTOP-2OUOK5M':
+        DATA_SIRTA_GRID = "C:/Users/nappe/Documents/Julian/Dissertation/satellite_ghi/"  # Dad's
+
 
     return DATA_SIRTA_GRID
 

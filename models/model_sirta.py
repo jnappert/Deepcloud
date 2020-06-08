@@ -16,7 +16,7 @@ class SirtaModel(nn.Module):
         self.channels = channels
 
         self.aux_data_model = nn.Sequential(OrderedDict([
-            ('aux_fc_1_linear', nn.Linear(6, 16)), #input is 8 for forecasting cause of irradiances
+            ('aux_fc_1_linear', nn.Linear(8, 16)), #input is 8 for forecasting cause of irradiances
             ('aux_fc_1_act', nn.ReLU()),
             ('aux_fc_2_linear', nn.Linear(16, 16)),
             ('aux_fc_2_act', nn.ReLU()),
@@ -50,7 +50,7 @@ class SirtaModel(nn.Module):
         ]))
 
         self.cat_model_keras = nn.Sequential(OrderedDict([
-            ('cat_fc_1_linear', nn.Linear(128, 64)), #this is 144 for forecasting, 128 for nowcasting
+            ('cat_fc_1_linear', nn.Linear(144, 64)), #this is 144 for forecasting, 128 for nowcasting
             ('cat_fc_1_act', nn.ReLU()),
             ('cat_fc_2_linear', nn.Linear(64, 32)),
             ('cat_fc_2_act', nn.ReLU()),
@@ -112,10 +112,10 @@ class SirtaModel(nn.Module):
         #x1 = self.cnn_resnet_model(images)
         x1 = self.cnn_model_keras(images)
 
-        #x2 = self.aux_data_model(aux_data)
-        #x = cat((x1, x2), dim=1)
+        x2 = self.aux_data_model(aux_data)
+        x = cat((x1, x2), dim=1)
 
-        x = self.cat_model_keras(x1)
+        x = self.cat_model_keras(x)
         return x
 
 # add Dropout in resnet block
