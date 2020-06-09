@@ -12,6 +12,8 @@ import torch
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
 import matplotlib.pyplot as plt
+import random
+import numpy as np
 
 from utils import Config, Logger, format_time, print_model_spec, get_git_hash
 
@@ -103,6 +105,7 @@ class Trainer:
         self.testing_indexes = [[2017, 1, 30], [2017, 4, 15], [2017, 7, 12], [2017, 10, 15]]
         for Y, M, D in self.testing_indexes:
             os.mkdir(os.path.join(self.session_name, '{}_{}_{}'.format(D, M, Y)))
+        os.mkdir(os.path.join(self.session_name, 'Random'))
 
     @abstractmethod
     def create_data(self):
@@ -258,10 +261,14 @@ class Trainer:
 
     def evaluate_epoch(self):
         self.model.eval()
+        self.testing_indexes.append([2017, random.randint(1, 12), random.randint(1, 29)])
+        j = 0
         for [Y, M, D] in self.testing_indexes:
             time = []
             nowcast = []
             actual = []
+            MAE = 0
+            total = 0
             for H in range(5, 19):
                 for i in range(0, 4):
                     Minu = i * 15
@@ -272,17 +279,24 @@ class Trainer:
                     time.append('{}:{}'.format(H_lf, Minu_lf))
                     nowcast.append(n)
                     actual.append(a)
+                    MAE += np.abs(a - n)
+                    total += 1
             plt.plot(time, actual)
             plt.plot(time, nowcast)
-            plt.title('EPOCH: {}. {}/{}/{}'.format(self.epoch, D, M, Y))
+            plt.title('EPOCH: {}. {}/{}/{}  ||  MAE = {:0.2f}'.format(self.epoch, D, M, Y, MAE/total))
             plt.legend(['actual', 'forecast'])
             plt.xticks(
                 ['6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
-                 '17:00', '18:00', '19:00', '20:00'], rotation=90)
-            fname = os.path.join(self.session_name, '{}_{}_{}/Epoch_{}.png'.format(D, M, Y, self.epoch))
+                 '17:00', '18:00', '19:00'], rotation=90)
+            if j < 4:
+                fname = os.path.join(self.session_name, '{}_{}_{}/Epoch_{}.png'.format(D, M, Y, self.epoch))
+            else:
+                fname = os.path.join(self.session_name, 'Random/Epoch_{}.png'.format(self.epoch))
             plt.savefig(fname)
             plt.close()
+            j += 1
 
+        del self.testing_indexes[-1]
         self.model.train()
 
     def evaluate_sample(self):

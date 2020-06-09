@@ -4,7 +4,7 @@ import numpy as np
 
 
 class RegMetrics:
-    def __init__(self, mode, tensorboard, session_name, skill_score):
+    def __init__(self, mode, tensorboard, session_name, skill_score, std):
         self.mode = mode
         self.tensorboard = tensorboard
         self.session_name = session_name
@@ -15,7 +15,7 @@ class RegMetrics:
         # minute by minute std
         #self.std_irradiance = 288.8
         # 15 min avg std
-        self.std_irradiance = 296.16
+        self.std_irradiance = std
 
     def update(self, pred, target):
         pred = pred.detach().cpu().numpy()
@@ -36,22 +36,22 @@ class RegMetrics:
         else:
             scores = [-float('inf'), -float('inf')]
 
-        """if self.mode == 'train':
+        if self.mode == 'train':
             fs_mse = 1 - scores[0]/self.skill_score.MSE_normalised_train
             fs_rmse = 1 - np.sqrt(scores[0] / self.skill_score.MSE_normalised_train)
             fs_mae = 1 - scores[1]/self.skill_score.MAE_normalised_train
         elif self.mode == 'val':
             fs_mse = 1 - scores[0] / self.skill_score.MSE_normalised_val
             fs_rmse = 1 - np.sqrt(scores[0] / self.skill_score.MSE_normalised_val)
-            fs_mae = 1 - scores[1] / self.skill_score.MAE_normalised_val"""
+            fs_mae = 1 - scores[1] / self.skill_score.MAE_normalised_val
 
         self.tensorboard.add_scalar(self.mode + '/mse', scores[0]*self.std_irradiance**2, global_step)
-        #self.tensorboard.add_scalar(self.mode + '/fs_mse', fs_mse, global_step)
+        self.tensorboard.add_scalar(self.mode + '/fs_mse', fs_mse, global_step)
         self.tensorboard.add_scalar(self.mode + '/rmse', np.sqrt(scores[0]*self.std_irradiance**2), global_step)
-        #self.tensorboard.add_scalar(self.mode + '/fs_rmse', fs_rmse, global_step)
+        self.tensorboard.add_scalar(self.mode + '/fs_rmse', fs_rmse, global_step)
         self.tensorboard.add_scalar(self.mode + '/mae', scores[1]*self.std_irradiance, global_step)
 
-        #self.tensorboard.add_scalar(self.mode + '/fs_mae', fs_mae, global_step)
+        self.tensorboard.add_scalar(self.mode + '/fs_mae', fs_mae, global_step)
 
         self.save_json(scores)
         self.reset()
@@ -61,11 +61,11 @@ class RegMetrics:
         filename = os.path.join(self.session_name, self.mode + '_metrics.json')
         output = {
             'MSE': scores[0]*self.std_irradiance**2,
-            #'FS_MSE': 1 - scores[0]/self.skill_score.MSE_normalised_val,
+            'FS_MSE': 1 - scores[0]/self.skill_score.MSE_normalised_val,
             'rMSE': np.sqrt(scores[0]*self.std_irradiance**2),
-            #'FS_rMSE': 1 - np.sqrt(scores[0]/self.skill_score.MSE_normalised_val),
+            'FS_rMSE': 1 - np.sqrt(scores[0]/self.skill_score.MSE_normalised_val),
             'MAE': scores[1]*self.std_irradiance,
-            #'FS_MAE': 1 - scores[1]/self.skill_score.MAE_normalised_val
+            'FS_MAE': 1 - scores[1]/self.skill_score.MAE_normalised_val
         }
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(output, f, ensure_ascii=False, indent=4)

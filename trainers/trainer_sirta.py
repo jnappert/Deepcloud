@@ -35,7 +35,7 @@ class SirtaTrainer(Trainer):
         # Smart Persistence
         self.skill_score = SkillScore(self.config.shades, self.config.IMG_SIZE, self.config.lookback,
                                       self.config.lookforward, self.training_seq_indexes, self.validation_seq_indexes,
-                                      self.config.step, self.helper)
+                                      self.config.step, self.std, self.helper)
 
         self.train_dataset = SirtaDataset(self.training_seq_indexes, self.config.shades, self.config.IMG_SIZE,
                                           self.config.lookback, self.config.lookforward, self.config.step,
@@ -73,8 +73,8 @@ class SirtaTrainer(Trainer):
         self.optimiser = Adam(parameters_with_grad, self.config.learning_rate, weight_decay=self.config.weight_decay)
 
     def create_metrics(self):
-        self.train_metrics = RegMetrics('train', self.tensorboard, self.session_name, self.skill_score)
-        self.val_metrics = RegMetrics('val', self.tensorboard, self.session_name, self.skill_score)
+        self.train_metrics = RegMetrics('train', self.tensorboard, self.session_name, self.skill_score, self.std)
+        self.val_metrics = RegMetrics('val', self.tensorboard, self.session_name, self.skill_score, self.std)
 
     def forward_model(self, batch):
         return self.model(batch['images'], batch['aux_data'].float())

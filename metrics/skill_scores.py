@@ -7,7 +7,7 @@ import data.sirta.directories
 
 class SkillScore():
 
-    def __init__(self, shades, IMG_SIZE, lookback, lookforward, training_seq_indexes, validation_seq_indexes, step, helper):
+    def __init__(self, shades, IMG_SIZE, lookback, lookforward, training_seq_indexes, validation_seq_indexes, step, std, helper):
         self.computer = socket.gethostname()
         self.shades = shades
         self.IMG_SIZE = IMG_SIZE
@@ -34,7 +34,7 @@ class SkillScore():
         # minute by minute std
         # self.std_irradiance = 288.8
         # 15 min avg std
-        self.std_irradiance = 296.16
+        self.std_irradiance = std
         self.smart_persistence_mean_error()
 
 

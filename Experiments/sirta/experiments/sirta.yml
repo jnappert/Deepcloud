@@ -1,7 +1,7 @@
 output_path: 'Experiments/sirta/experiments/'
 #tag: 'nowcasting_15minavg_5000images_months3+10'
-tag: 'fuck_forecast'
-#tag: '100_epochs'
+tag: 'forecast_1hour'
+#tag: 'fuck'
 
 #shades: 'Y'
 shades: 'SAT'
@@ -9,12 +9,12 @@ IMG_SIZE: 128
 nb_training_seq: 5000 #2500
 nb_validation_seq: 1250 #625  #val_iterations * batch size??
 lookback: 1
-lookforward: 2
+lookforward: 4
 step: 15
 
 #epoch = n_iterations/nb_training*batch size
 batch_size: 10 # 5
-n_iterations: 50000 #10000 # = batch_size*nb_epoch
+n_iterations: 20000 #10000 # = batch_size*nb_epoch
 print_iterations: 1 # print_iterations*batch_size = nb_training_seq (1 epoch)
 vis_iterations: 1000
 #val_iterations: 100
