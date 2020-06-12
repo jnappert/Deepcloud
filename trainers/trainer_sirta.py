@@ -14,7 +14,8 @@ from torch.utils.data import DataLoader
 from torch import unsqueeze
 
 from trainers.trainer import Trainer
-from models.model_sirta import SirtaModel  #
+from models.model_sirta import SirtaModel #
+from models.model_lstm import LSTMModel
 from data.sirta.SirtaDataset import SirtaDataset
 from metrics.regression import RegMetrics
 from trainers.trainer_sirta_sets_creation import Sirta_seq_generator
@@ -62,8 +63,13 @@ class SirtaTrainer(Trainer):
     def mean_std(self):
         return self.mean, self.std
 
-    def create_model(self):
-        self.model = SirtaModel(self.config.lookback + 1)
+    def create_model(self, lstm=False):
+        lstm = True
+        if not lstm:
+            self.model = SirtaModel(self.config.lookback + 1)
+        else:
+            self.model = LSTMModel()
+            #self.model.reset_hidden_state()
 
     def create_loss(self):
         self.loss_fn = nn.MSELoss()  # CrossEntropyLoss()
@@ -76,8 +82,15 @@ class SirtaTrainer(Trainer):
         self.train_metrics = RegMetrics('train', self.tensorboard, self.session_name, self.skill_score, self.std)
         self.val_metrics = RegMetrics('val', self.tensorboard, self.session_name, self.skill_score, self.std)
 
-    def forward_model(self, batch):
-        return self.model(batch['images'], batch['aux_data'].float())
+    def forward_model(self, batch, lstm=False):
+        lstm = True
+        #print(unsqueeze(batch['images'][:, 0, :, :], 1).size())
+        #print(batch['images'].size())
+        if not lstm:
+            return self.model(batch['images'], batch['aux_data'].float())
+        else:
+            return self.model(unsqueeze(batch['images'][:, 0, :, :], 1), unsqueeze(batch['images'][:, 1, :, :], 1),
+                              batch['aux_data'][:, 0, :].float(), batch['aux_data'][:, 1, :].float())
 
     def forward_loss(self, batch, output):
         # print('output : ', output)

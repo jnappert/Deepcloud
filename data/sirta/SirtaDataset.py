@@ -29,7 +29,8 @@ from data.sirta.directories import data_images_dir, data_irradiance_dir, data_pr
 class SirtaDataset(Dataset):
     """Sirta dataset."""
 
-    def __init__(self, seq_indexes, shades, IMG_SIZE, lookback, lookforward, step, averaged_15min_dataset, mean, std, helper, preprocessed_dataset=True, transform=None):
+    def __init__(self, seq_indexes, shades, IMG_SIZE, lookback, lookforward, step, averaged_15min_dataset, mean, std,
+                 helper, preprocessed_dataset=True, transform=None):
         # def __init__(self, computer, nb_training_seq, lookback, lookforward, mode=None, transform=None):
         """
         Args:
@@ -64,7 +65,9 @@ class SirtaDataset(Dataset):
     def __len__(self):
         return len(self.seq_indexes)  # int(nb_training_seq*0.8) #len(self.measurements_list)
 
-    def __getitem__(self, idx, train=True):
+    def __getitem__(self, idx, train=True, lstm=False):
+
+        lstm = True
 
         if self.preprocessed_dataset == True:
             DATADIR = data_preprocessed_images_dir(self.computer)
@@ -87,6 +90,7 @@ class SirtaDataset(Dataset):
         samples_list_indexes = self.helper.lookback_indexes(y, m, d, h, minu)
         past_images = []
         past_irradiances = []
+        aux_data = []
 
         for [y, m, d, h, minu] in samples_list_indexes:
             Y, M, D, H, Minu = self.helper.string_index(y, m, d, h, minu)
@@ -107,18 +111,18 @@ class SirtaDataset(Dataset):
 
                     helio_data = pd.read_csv(helio_path, header=34, usecols=['Date', 'Time', 'Global Horiz'])
                     # using python engine but much slower
-                    #helio_data = pd.read_csv(helio_path, engine='python', skiprows=34, header=0, parse_dates=True)
-                    #helio_data_irradiance = helio_data[['Date', 'Time', 'Global Horiz', 'Clear-Sky']]
+                    # helio_data = pd.read_csv(helio_path, engine='python', skiprows=34, header=0, parse_dates=True)
+                    # helio_data_irradiance = helio_data[['Date', 'Time', 'Global Horiz', 'Clear-Sky']]
 
                     date_id = '{}-{}-{}'.format(Y, M, D)
                     time_id = '{}:{}'.format(h, Minu)
 
                     helio_data_irradiance_date = helio_data[helio_data['Date'] == date_id]
-                    helio_data_irradiance_time = helio_data_irradiance_date[helio_data_irradiance_date['Time'] == time_id]
+                    helio_data_irradiance_time = helio_data_irradiance_date[
+                        helio_data_irradiance_date['Time'] == time_id]
                     irradiance = float(helio_data_irradiance_time['Global Horiz']) * 4
                 else:
                     irradiance = df['global_solar_flux'][min_1440]
-
 
                 solar_zenith_angle = df['solar_zenith_angle'][min_1440]
                 solar_azimuthal_angle = df['solar_azimuthal_angle'][min_1440]
@@ -154,22 +158,26 @@ class SirtaDataset(Dataset):
                     target = df['global_solar_flux'][min_1440_target]
 
                 # mean/std for minute by minute
-                #mean_irradiance = 434.4
-                #std_irradiance = 288.8
+                # mean_irradiance = 434.4
+                # std_irradiance = 288.8
                 # mean/std for 15 min avg
-                #mean_irradiance = 471.0
-                #std_irradiance = 281.5
+                # mean_irradiance = 471.0
+                # std_irradiance = 281.5
                 # self
                 mean_irradiance = self.mean
                 std_irradiance = self.std
-
 
                 target = (target - mean_irradiance) / std_irradiance
                 irradiance = (irradiance - mean_irradiance) / std_irradiance
                 past_irradiances.append(irradiance)
 
-                aux_data = [solar_zenith_angle_rad, solar_zenith_angle_cos, solar_zenith_angle_sin,
-                            solar_azimuthal_angle_rad, solar_azimuthal_angle_cos, solar_azimuthal_angle_sin]
+                if lstm:
+                    aux_data.append([solar_zenith_angle_rad, solar_zenith_angle_cos, solar_zenith_angle_sin,
+                                     solar_azimuthal_angle_rad, solar_azimuthal_angle_cos, solar_azimuthal_angle_sin,
+                                     irradiance])
+                else:
+                    aux_data = [solar_zenith_angle_rad, solar_zenith_angle_cos, solar_zenith_angle_sin,
+                                solar_azimuthal_angle_rad, solar_azimuthal_angle_cos, solar_azimuthal_angle_sin]
 
                 metadata_only = None
                 if metadata_only == True:
@@ -214,10 +222,10 @@ class SirtaDataset(Dataset):
                             # -----------------------------------------------------------------------------------------
                             elif self.shades == 'SAT':
                                 img_array_redim_1 = np.reshape(get_sat_grid(y, m, d, h, minu), (41, 25))
-                                #new_array_1 = cv2.resize(img_array_redim_1, (self.IMG_SIZE, self.IMG_SIZE))
+                                # new_array_1 = cv2.resize(img_array_redim_1, (self.IMG_SIZE, self.IMG_SIZE))
                                 new_array_1 = cv2.resize(img_array_redim_1, (100, 164))
                                 new_array_1[new_array_1 == 0] = 1
-                                #new_array_1 = np.array(new_array_1).reshape(1, self.IMG_SIZE, self.IMG_SIZE)
+                                # new_array_1 = np.array(new_array_1).reshape(1, self.IMG_SIZE, self.IMG_SIZE)
                                 new_array_1 = np.array(new_array_1).reshape(1, 164, 100)
 
                             if self.shades != 'SAT':
@@ -295,9 +303,12 @@ class SirtaDataset(Dataset):
             # sample = totensor(sample)
         else:
             # totensor = ToTensor()
-            sample = {
-                'images': torch.from_numpy(np.concatenate((past_images[-0], past_images[-1]))), #need to concatenate and include past_images[-0] for forecasting
-                'aux_data': np.array(aux_data + past_irradiances), #need past irradiances for forecasting
+            if not lstm:
+                aux_data = aux_data + past_irradiances
+            sample = { # could also just seperate the images and aux_data into separate tensors
+                'images': torch.from_numpy(np.concatenate((past_images[-0], past_images[-1]))),
+                # need to concatenate and include past_images[-0] for forecasting
+                'aux_data': np.array(aux_data),  # need past irradiances for forecasting
                 'irradiance': np.array([target]),
                 'index': np.array(samples_list_indexes)}
             # sample = {'images': torch.from_numpy(new_array_1).float(), 'aux_data': np.array(aux_data),'irradiance': np.array([target])}
@@ -311,19 +322,20 @@ class SirtaDataset(Dataset):
 
     def get_image(self, idx):
         sample = self.__getitem__(idx, train=False)
-        images, aux_data, irradiance, index = sample['images'], sample['aux_data'], sample['irradiance'], sample['index']
+        images, aux_data, irradiance, index = sample['images'], sample['aux_data'], sample['irradiance'], sample[
+            'index']
         return {'images': images.unsqueeze(0),  # .type(torch.cuda.FloatTensor),
                 'aux_data': torch.from_numpy(aux_data).float().unsqueeze(0),
                 'irradiance': torch.from_numpy(irradiance).float().unsqueeze(0),
                 'index': torch.from_numpy(index).float()}
 
 
-
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
 
     def __call__(self, sample):
-        images, aux_data, irradiance, index = sample['images'], sample['aux_data'], sample['irradiance'], sample['index']
+        images, aux_data, irradiance, index = sample['images'], sample['aux_data'], sample['irradiance'], sample[
+            'index']
 
         # swap color axis because
         # numpy image: H x W x C
@@ -383,7 +395,7 @@ def show_data_batch(sample_batched, mean, std):
     for i in range(0, images_batch.size()[1]):
         plt.figure(i)
         plt.imshow(images_batch[0, i, :, :], vmin=0, vmax=255)
-        #plt.imshow(images_batch[i, :, :], vmin=0, vmax=255)
+        # plt.imshow(images_batch[i, :, :], vmin=0, vmax=255)
 
         # plt.imshow(images_batch[i][:, :, 1])
         # plt.imshow(images_batch[i][:, :, 2])
@@ -393,10 +405,8 @@ def show_data_batch(sample_batched, mean, std):
         d = index_batch[0, i, 2].item()
         h = index_batch[0, i, 3].item()
         minu = index_batch[0, i, 4].item()
-        #plt.title('{}:{}, {}/{}/{}: Irradiance = {:0.2f}, Target = {:0.2f}'.format(str(h), str(minu), str(d), str(m), str(y),aux_data_batch[0][i + 6] * 288.8 + 434.4, irradiance_batch[0][0] * 288.8 + 434.4))
+        # plt.title('{}:{}, {}/{}/{}: Irradiance = {:0.2f}, Target = {:0.2f}'.format(str(h), str(minu), str(d), str(m), str(y),aux_data_batch[0][i + 6] * 288.8 + 434.4, irradiance_batch[0][0] * 288.8 + 434.4))
         plt.title(
             '{}:{}, {}/{}/{}: Irradiance = {:0.2f}'.format(str(h), str(minu), str(d), str(m), str(y),
-                                                                             irradiance_batch[0][0] * std + mean))
+                                                           irradiance_batch[0][0] * std + mean))
         plt.show()
-
-

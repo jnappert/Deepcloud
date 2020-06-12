@@ -57,7 +57,7 @@ class SirtaModel(nn.Module):
             ('out', nn.Linear(32, 1)),
         ]))
 
-        self.cnn_model = nn.Sequential(OrderedDict([
+        """self.cnn_model = nn.Sequential(OrderedDict([
              ('image_preprocessing', ImagePreprocessing()),
              ('conv_0', ConvBlock(4, 8)),
              ('res_0', ResBlock(8, 8)),
@@ -90,7 +90,7 @@ class SirtaModel(nn.Module):
         self.cat_resnet_model = nn.Sequential(OrderedDict([
             ('cat_fc_1_linear', nn.Linear(32, 64)),
             ('cat_fc_2_linear', nn.Linear(64, 1)),
-        ]))
+        ]))"""
 
         #self.model = nn.Sequential(OrderedDict([
         #    ('image_preprocessing', ImagePreprocessing()),
@@ -111,9 +111,12 @@ class SirtaModel(nn.Module):
     def forward(self, images, aux_data):
         #x1 = self.cnn_resnet_model(images)
         x1 = self.cnn_model_keras(images)
+        print(x1.size())
 
         x2 = self.aux_data_model(aux_data)
+        print(x2.size())
         x = cat((x1, x2), dim=1)
+        print(x.size())
 
         x = self.cat_model_keras(x)
         return x
