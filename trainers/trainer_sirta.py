@@ -83,9 +83,7 @@ class SirtaTrainer(Trainer):
         self.val_metrics = RegMetrics('val', self.tensorboard, self.session_name, self.skill_score, self.std)
 
     def forward_model(self, batch, lstm=False):
-        lstm = True
-        #print(unsqueeze(batch['images'][:, 0, :, :], 1).size())
-        #print(batch['images'].size())
+        #lstm = True
         if not lstm:
             return self.model(batch['images'], batch['aux_data'].float())
         else:

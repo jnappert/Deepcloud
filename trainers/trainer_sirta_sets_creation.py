@@ -14,7 +14,7 @@ from torch.utils.data import Dataset, DataLoader
 import socket
 from time import sleep
 
-from data.sirta.directories import data_images_dir, data_preprocessed_images_dir, data_sirta_grid, \
+from data.sirta.directories import data_images_dir, eumetsat_sat_images, data_sirta_grid, \
     data_clear_sky_irradiance_dir, data_irradiance_dir
 
 
@@ -31,9 +31,11 @@ class Sirta_seq_generator():
         self.step = step
         self.averaged_15min_dataset = averaged_15min_dataset
         self.helper = helper
-        self.training_seq_indexes, self.validation_seq_indexes, self.mean, self.std = self.create_train_val_list(nb_training_seq,
-                                                                                            nb_validation_seq, lookback,
-                                                                                            lookforward, self.computer)
+        self.sat_images = False
+        self.training_seq_indexes, self.validation_seq_indexes, self.mean, self.std = self.create_train_val_list(
+            nb_training_seq,
+            nb_validation_seq, lookback,
+            lookforward, self.computer)
 
     def find_next_seq_index(self, y, m, d, h, minu, lookback, lookforward):  # return index of the next sequence
         # pos = lookback+lookforward+10+1
@@ -45,8 +47,8 @@ class Sirta_seq_generator():
 
     def test_seq(self, y, m, d, h, minu, computer):  # check if every sample of the sequence exists
 
-        if self.preprocessed_dataset:
-            DATADIR = data_preprocessed_images_dir(computer)
+        if self.sat_images:
+            DATADIR = eumetsat_sat_images(computer)
         else:
             DATADIR = data_sirta_grid(computer)
 
@@ -57,22 +59,31 @@ class Sirta_seq_generator():
         for y, m, d, h, minu in lb_id:
             Y, M, D, H, minut = self.helper.string_index(y, m, d, h, minu)
 
-            # folder_name = '{}/{}{}{}'.format(y, y, M, D)
             folder_name = '{}'.format(Y)
             path = os.path.join(DATADIR, folder_name)
-            if os.path.isdir(path) == True:
-                file_name_1 = 'Palaiseau_ghi_{}{}{}.csv'.format(Y, M, D)
-                # file_name_2 = '{}{}{}{}{}00_03.jpg'.format(y, M, D, H, minut)
-                path_image_1 = os.path.join(path, file_name_1)
-                # path_image_2 = os.path.join(path, file_name_2)
-                if os.path.isfile(path_image_1) != True:
-                    # print('False image path : ', path_image_1)
-                    ans = False
-                elif minu > 59:
+            if self.sat_images:
+                if os.path.isdir(path):
+                    file_name_1 = '{}{}/HRV/{}{}.jpg'.format(M, D, H, minut)
+                    path_image_1 = os.path.join(path, file_name_1)
+                    if os.path.isfile(path_image_1) != True:
+                        ans = False
+                    elif minu > 59:
+                        ans = False
+                else:
+                    print('False path: ', path)
                     ans = False
             else:
-                print('False path: ', path)
-                ans = False
+                if os.path.isdir(path):
+                    file_name_1 = 'Palaiseau_ghi_{}{}{}.csv'.format(Y, M, D)
+                    path_image_1 = os.path.join(path, file_name_1)
+                    if os.path.isfile(path_image_1) != True:
+                        ans = False
+                    elif minu > 59:
+                        ans = False
+                else:
+                    print('False path: ', path)
+                    ans = False
+
         return ans
 
     def get_mean_std(self, list):
@@ -110,8 +121,8 @@ class Sirta_seq_generator():
     def create_train_val_list(self, nb_training_seq, nb_validation_seq, lookback, lookforward,
                               computer=socket.gethostname()):  # create the list of sequence indexes
 
-        if self.preprocessed_dataset == True:
-            DATADIR = data_preprocessed_images_dir(computer)
+        if self.sat_images:
+            DATADIR = eumetsat_sat_images(computer)
         else:
             DATADIR = data_sirta_grid(computer)
 
@@ -177,17 +188,17 @@ class Sirta_seq_generator():
             y = 2018
             # for m in range(2, 10):  # range(1,13), m = month
             # if you wanna use sky images, month has to be from 6 - 8 and days from 1 to 6
-            for m in range(1, 13):  # range(1,13), m = month
-                #if m <= 9:
-                    #M = '0{}'.format(m)
-                #else:
-                    #M = '{}'.format(m)
+            for m in range(5, 9):  # range(1,13), m = month
+                # if m <= 9:
+                # M = '0{}'.format(m)
+                # else:
+                # M = '{}'.format(m)
 
                 for d in range(1, 32):  # d:day
-                    #if d <= 9:
-                        #D = '0{}'.format(d)
-                    #else:
-                        #D = '{}'.format(d)
+                    # if d <= 9:
+                    # D = '0{}'.format(d)
+                    # else:
+                    # D = '{}'.format(d)
                     # folder_name = '2018{}{}'.format(M, D)
                     folder_name = '{}'.format(y)
                     path = os.path.join(DATADIR, folder_name)
@@ -201,9 +212,13 @@ class Sirta_seq_generator():
                         minu = 0
                         while h < 18:
                             if self.test_seq(y, m, d, h, minu, computer):
-                                if random.random() < 0.8:
+                                """if random.random() < 0.8:
                                     set_id = 'training_set'
                                 else:
+                                    set_id = 'validation_set'"""
+                                if m == 5 or m == 6 or m == 7:
+                                    set_id = 'training_set'
+                                if m == 8:
                                     set_id = 'validation_set'
                                 if set_id == 'training_set':
                                     training_list.append([m, d, h, minu])
@@ -218,11 +233,11 @@ class Sirta_seq_generator():
         print('\nNumber of Sequences available in the training list :', np.shape(training_list)[0])
         print('Number of Sequences available in the validation list :', np.shape(validation_list)[0])
 
-        #training_seq_indexes = training_list[0:nb_training_seq]
-        #validation_seq_indexes = validation_list[0:nb_validation_seq]
-        # for sequential in order
-        training_seq_indexes = training_list[2756:2756 + nb_training_seq]
-        validation_seq_indexes = validation_list[689:689 + nb_validation_seq]
+        training_seq_indexes = training_list[0:nb_training_seq]
+        validation_seq_indexes = validation_list[0:nb_validation_seq]
+        # for sequential in order - LSTM
+        #training_seq_indexes = training_list[2756:2756 + nb_training_seq]
+        #validation_seq_indexes = validation_list[689:689 + nb_validation_seq]
 
         print('\nNumber of Sequences in the training list :', len(training_seq_indexes))
         print('Number of Sequences in the validation list :', len(validation_seq_indexes))

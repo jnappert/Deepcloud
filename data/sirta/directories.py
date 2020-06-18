@@ -101,12 +101,19 @@ def data_clear_sky_irradiance_dir(computer):
 
 def data_sirta_grid(computer):
     if computer == 'DESKTOP-A1O805T':
-        DATA_SIRTA_GRID = 'D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Satellite/preprocessed_irradiance_data/ghi/'
+        DATADIR_SIRTA_GRID = 'D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Satellite/preprocessed_irradiance_data/ghi/'
     elif computer == 'DESKTOP-2OUOK5M':
-        DATA_SIRTA_GRID = "C:/Users/nappe/Documents/Julian/Dissertation/satellite_ghi/"  # Dad's
+        DATADIR_SIRTA_GRID = "C:/Users/nappe/Documents/Julian/Dissertation/satellite_ghi/"  # Dad's
 
+    return DATADIR_SIRTA_GRID
 
-    return DATA_SIRTA_GRID
+def eumetsat_sat_images(computer):
+    if computer == 'DESKTOP-A1O805T':
+        DATADIR_EUMETSAT_IMAGES = 'D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Satellite/eumetsat_images/'
+    elif computer == 'DESKTOP-2OUOK5M':
+        DATADIR_EUMETSAT_IMAGES = "C:/Users/nappe/Documents/Julian/Dissertation/satellite_ghi/"  # Dad's
+
+    return DATADIR_EUMETSAT_IMAGES
 
 
 #def data_experiments_dir(computer):

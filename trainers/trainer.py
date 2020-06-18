@@ -103,6 +103,7 @@ class Trainer:
         # Testing Indexes
         self.index = None
         self.testing_indexes = [[2017, 1, 30], [2017, 4, 15], [2017, 7, 12], [2017, 10, 15]]
+        #self.testing_indexes = [[2018, 8, 1], [2018, 8, 3], [2018, 8, 22], [2018, 8, 31]]
         for Y, M, D in self.testing_indexes:
             os.mkdir(os.path.join(self.session_name, '{}_{}_{}'.format(D, M, Y)))
         os.mkdir(os.path.join(self.session_name, 'Random'))
@@ -262,6 +263,7 @@ class Trainer:
     def evaluate_epoch(self):
         self.model.eval()
         self.testing_indexes.append([2017, random.randint(1, 12), random.randint(1, 29)])
+        #self.testing_indexes.append([2018, 8, random.randint(1, 29)])
         j = 0
         for [Y, M, D] in self.testing_indexes:
             time = []
@@ -269,7 +271,7 @@ class Trainer:
             actual = []
             MAE = 0
             total = 0
-            for H in range(5, 19):
+            for H in range(5, 20):
                 for i in range(0, 4):
                     Minu = i * 15
                     self.index = [Y, M, D, H, Minu]
@@ -288,6 +290,9 @@ class Trainer:
             plt.xticks(
                 ['6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
                  '17:00', '18:00', '19:00'], rotation=90)
+            """plt.xticks(
+                ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
+                 '17:00', '18:00'], rotation=90)"""
             if j < 4:
                 fname = os.path.join(self.session_name, '{}_{}_{}/Epoch_{}.png'.format(D, M, Y, self.epoch))
             else:

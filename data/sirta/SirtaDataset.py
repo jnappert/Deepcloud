@@ -15,7 +15,7 @@ In sirtadataset, model_sirta, trainer_sirta_sets_creation"""
 # from torchvision import transforms, utils
 import socket
 
-from data.sirta.directories import data_images_dir, data_irradiance_dir, data_preprocessed_images_dir, \
+from data.sirta.directories import data_images_dir, data_irradiance_dir, eumetsat_sat_images, \
     data_sirta_grid, data_clear_sky_irradiance_dir
 
 
@@ -57,6 +57,7 @@ class SirtaDataset(Dataset):
         self.mean = mean
         self.std = std
         self.helper = helper
+        self.sat_images = False
 
         # self.training_seq_idexes = []
         # self.validation_seq_idexes = []
@@ -69,8 +70,8 @@ class SirtaDataset(Dataset):
 
         lstm = True
 
-        if self.preprocessed_dataset == True:
-            DATADIR = data_preprocessed_images_dir(self.computer)
+        if self.sat_images == True:
+            DATADIR = eumetsat_sat_images(self.computer)
         else:
             DATADIR = data_sirta_grid(self.computer)
 
@@ -95,7 +96,7 @@ class SirtaDataset(Dataset):
         for [y, m, d, h, minu] in samples_list_indexes:
             Y, M, D, H, Minu = self.helper.string_index(y, m, d, h, minu)
 
-            folder_name = '{}'.format(Y, M, D)
+            folder_name = '{}'.format(Y)
             path = os.path.join(DATADIR, folder_name)
 
             if os.path.isdir(path) == True:
@@ -110,10 +111,6 @@ class SirtaDataset(Dataset):
                                                'SoDa_HC3-METEO_lat48.713_lon2.209_2017-01-01_2018-12-31_1266955311.csv')
 
                     helio_data = pd.read_csv(helio_path, header=34, usecols=['Date', 'Time', 'Global Horiz'])
-                    # using python engine but much slower
-                    # helio_data = pd.read_csv(helio_path, engine='python', skiprows=34, header=0, parse_dates=True)
-                    # helio_data_irradiance = helio_data[['Date', 'Time', 'Global Horiz', 'Clear-Sky']]
-
                     date_id = '{}-{}-{}'.format(Y, M, D)
                     time_id = '{}:{}'.format(h, Minu)
 
@@ -186,7 +183,10 @@ class SirtaDataset(Dataset):
                                 irradiance]
 
                 else:
-                    file_name_1 = 'Palaiseau_ghi_{}{}{}.csv'.format(y, M, D)
+                    if self.sat_images:
+                        file_name_1 = '{}{}/HRV/{}{}.jpg'.format(M, D, H, Minu)
+                    else:
+                        file_name_1 = 'Palaiseau_ghi_{}{}{}.csv'.format(y, M, D)
                     file_name_2 = '{}{}{}{}{}00_03.jpg'.format(y, M, D, H, Minu)
                     path_image_1 = os.path.join(path, file_name_1)
                     path_image_2 = os.path.join(path, file_name_2)
@@ -221,12 +221,16 @@ class SirtaDataset(Dataset):
                             # image set up for satellite grid
                             # -----------------------------------------------------------------------------------------
                             elif self.shades == 'SAT':
-                                img_array_redim_1 = np.reshape(get_sat_grid(y, m, d, h, minu), (41, 25))
-                                # new_array_1 = cv2.resize(img_array_redim_1, (self.IMG_SIZE, self.IMG_SIZE))
-                                new_array_1 = cv2.resize(img_array_redim_1, (100, 164))
-                                new_array_1[new_array_1 == 0] = 1
-                                # new_array_1 = np.array(new_array_1).reshape(1, self.IMG_SIZE, self.IMG_SIZE)
-                                new_array_1 = np.array(new_array_1).reshape(1, 164, 100)
+                                if self.sat_images:
+                                    img_array_redim_1 = cv2.imread(path_image_1, cv2.IMREAD_GRAYSCALE)
+                                    new_array_1 = cv2.resize(img_array_redim_1, (self.IMG_SIZE, self.IMG_SIZE))
+                                    new_array_1[new_array_1 == 0] = 1
+                                    new_array_1 = np.array(new_array_1).reshape(1, self.IMG_SIZE, self.IMG_SIZE)
+                                else:
+                                    img_array_redim_1 = np.reshape(get_sat_grid(y, m, d, h, minu), (41, 25))
+                                    new_array_1 = cv2.resize(img_array_redim_1, (100, 164))
+                                    new_array_1[new_array_1 == 0] = 1
+                                    new_array_1 = np.array(new_array_1).reshape(1, 164, 100)
 
                             if self.shades != 'SAT':
                                 img_array_redim_1 = img_array_1[35:725, 150:860]
@@ -305,12 +309,11 @@ class SirtaDataset(Dataset):
             # totensor = ToTensor()
             if not lstm:
                 aux_data = aux_data + past_irradiances
-            sample = { # could also just seperate the images and aux_data into separate tensors
-                'images': torch.from_numpy(np.concatenate((past_images[-0], past_images[-1]))),
-                # need to concatenate and include past_images[-0] for forecasting
-                'aux_data': np.array(aux_data),  # need past irradiances for forecasting
-                'irradiance': np.array([target]),
-                'index': np.array(samples_list_indexes)}
+            sample = {'images': torch.from_numpy(np.concatenate((past_images[-0], past_images[-1]))),  # forecasting
+                      #'images': torch.from_numpy(past_images[0]),
+                      'aux_data': np.array(aux_data),  #forecasting
+                      'irradiance': np.array([target]),
+                      'index': np.array(samples_list_indexes)}
             # sample = {'images': torch.from_numpy(new_array_1).float(), 'aux_data': np.array(aux_data),'irradiance': np.array([target])}
 
             # sample = totensor(sample)
@@ -388,13 +391,10 @@ def show_data_batch(sample_batched, mean, std):
     """Show image with landmarks for a batch of samples."""
     images_batch, irradiance_batch, aux_data_batch, index_batch = \
         sample_batched['images'], sample_batched['irradiance'], sample_batched['aux_data'], sample_batched['index']
-    print(images_batch.size())
-    print(aux_data_batch.size())
-    print(irradiance_batch.size())
 
     for i in range(0, images_batch.size()[1]):
         plt.figure(i)
-        plt.imshow(images_batch[0, i, :, :], vmin=0, vmax=255)
+        plt.imshow(images_batch[0, i, :, :], cmap='gray', vmin=0, vmax=255)
         # plt.imshow(images_batch[i, :, :], vmin=0, vmax=255)
 
         # plt.imshow(images_batch[i][:, :, 1])
