@@ -71,9 +71,8 @@ def data_irradiance_dir(computer):
         DATADIR_IRRADIANCE = "/scratches/bagnet_3/qp208/Datasets_2014_2019/Sirta/Irradiance/solys2/2014_2019_preprocessed_irradiance_data/"
         #DATADIR_IRRADIANCE = "/scratch/qp208/Datasets_2014_2019/Sirta/Irradiance/solys2/2014_2019_preprocessed_irradiance_data/"
     elif computer == 'mario':
-        DATADIR_IRRADIANCE = "/scratches/bagnet_3/qp208/Datasets/Sirta/Irradiance/solys2/preprocessed_irradiance_data/"
-        DATADIR_IRRADIANCE = "/scratches/bagnet_3/qp208/Datasets_2014_2019/Sirta/Irradiance/solys2/2014_2019_preprocessed_irradiance_data/"
-        #DATADIR_IRRADIANCE = "/scratch/qp208/Datasets_2014_2019/Sirta/Irradiance/solys2/2014_2019_preprocessed_irradiance_data/"
+        DATADIR_IRRADIANCE = "/scratch/jn424/Data/Sirta/solys2/"
+
 
     return DATADIR_IRRADIANCE
 
@@ -94,7 +93,7 @@ def data_clear_sky_irradiance_dir(computer):
         DATADIR_CLEAR_SKY_IRRADIANCE = "/scratch/Datasets_qp208/Datasets/Helio/"
         DATADIR_CLEAR_SKY_IRRADIANCE = "/scratch/qp208/Datasets_2014_2019/Helio/"
     elif computer == 'mario':
-        DATADIR_CLEAR_SKY_IRRADIANCE = "/scratch/qp208/Datasets_2014_2019/Helio/"
+        DATADIR_CLEAR_SKY_IRRADIANCE = "/scratch/jn424/Data/Helio/"
 
     return DATADIR_CLEAR_SKY_IRRADIANCE
 
@@ -104,6 +103,8 @@ def data_sirta_grid(computer):
         DATADIR_SIRTA_GRID = 'D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Satellite/preprocessed_irradiance_data/ghi/'
     elif computer == 'DESKTOP-2OUOK5M':
         DATADIR_SIRTA_GRID = "C:/Users/nappe/Documents/Julian/Dissertation/satellite_ghi/"  # Dad's
+    elif computer == 'mario':
+        DATADIR_SIRTA_GRID = "/scratch/jn424/Data/Satellite/preprocessed_irradiance_data/ghi/"
 
     return DATADIR_SIRTA_GRID
 

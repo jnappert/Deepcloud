@@ -309,7 +309,7 @@ class SirtaDataset(Dataset):
             # totensor = ToTensor()
             if not lstm:
                 aux_data = aux_data + past_irradiances
-            sample = {'images': torch.from_numpy(np.concatenate((past_images[-0], past_images[-1]))),  # forecasting
+            sample = {'images': torch.from_numpy(np.concatenate((past_images[-0], past_images[-2], past_images[-1]))),  # forecasting
                       #'images': torch.from_numpy(past_images[0]),
                       'aux_data': np.array(aux_data),  #forecasting
                       'irradiance': np.array([target]),

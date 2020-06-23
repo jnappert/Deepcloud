@@ -188,7 +188,7 @@ class Sirta_seq_generator():
             y = 2018
             # for m in range(2, 10):  # range(1,13), m = month
             # if you wanna use sky images, month has to be from 6 - 8 and days from 1 to 6
-            for m in range(5, 9):  # range(1,13), m = month
+            for m in range(3, 11):  # range(1,13), m = month
                 # if m <= 9:
                 # M = '0{}'.format(m)
                 # else:
@@ -216,9 +216,9 @@ class Sirta_seq_generator():
                                     set_id = 'training_set'
                                 else:
                                     set_id = 'validation_set'"""
-                                if m == 5 or m == 6 or m == 7:
+                                if m == 5 or m == 6 or m == 7 or m == 3 or m == 9 or m == 10:
                                     set_id = 'training_set'
-                                if m == 8:
+                                if m == 8 or m == 4:
                                     set_id = 'validation_set'
                                 if set_id == 'training_set':
                                     training_list.append([m, d, h, minu])
@@ -233,11 +233,11 @@ class Sirta_seq_generator():
         print('\nNumber of Sequences available in the training list :', np.shape(training_list)[0])
         print('Number of Sequences available in the validation list :', np.shape(validation_list)[0])
 
-        training_seq_indexes = training_list[0:nb_training_seq]
-        validation_seq_indexes = validation_list[0:nb_validation_seq]
+        #training_seq_indexes = training_list[0:nb_training_seq]
+        #validation_seq_indexes = validation_list[0:nb_validation_seq]
         # for sequential in order - LSTM
-        #training_seq_indexes = training_list[2756:2756 + nb_training_seq]
-        #validation_seq_indexes = validation_list[689:689 + nb_validation_seq]
+        training_seq_indexes = training_list[800:800 + nb_training_seq]
+        validation_seq_indexes = validation_list[470:470 + nb_validation_seq]
 
         print('\nNumber of Sequences in the training list :', len(training_seq_indexes))
         print('Number of Sequences in the validation list :', len(validation_seq_indexes))

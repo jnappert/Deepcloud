@@ -1,25 +1,24 @@
 output_path: 'Experiments/sirta/experiments/'
-tag: 'nowcast_eumetsat_images_fuck'
-#tag: 'forecast_1hour'
-#tag: 'lstm_test_hidden_3layers'
+#tag: 'nowcast_eumetsat_images'
+tag: 'lstm_1hour_3imagesback'
 
 #shades: 'Y'
 shades: 'SAT'
 IMG_SIZE: 128
-nb_training_seq: 500 #5000 #2500
-nb_validation_seq: 125 #1250 #625  #val_iterations * batch size??
-lookback: 1
-lookforward: 2
+nb_training_seq: 5000 #2500
+nb_validation_seq: 1250 #625  #val_iterations * batch size??
+lookback: 2
+lookforward: 4
 step: 15
 
 #epoch = n_iterations/nb_training*batch size
-batch_size: 5 #10 # 5
+batch_size: 10 # 5
 n_iterations: 50000 #10000 # = batch_size*nb_epoch
 print_iterations: 1 # print_iterations*batch_size = nb_training_seq (1 epoch)
 vis_iterations: 1000
 #val_iterations: 100
 n_workers: 8 #normally 4
-gpu: False
+gpu: True
 gpu_nb: 0
 preprocessed_dataset: False
 averaged_15min_dataset: True

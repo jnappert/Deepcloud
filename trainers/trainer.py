@@ -23,11 +23,12 @@ class Trainer:
 
     def __init__(self, options):
         self.options = options
+        restore = False
         ##########
         # Trainer utils
         ##########
-        self.global_step = 0
-        self.epoch = 0
+        self.global_step = 10000
+        self.epoch = 28
         self.start_time = None
         self.best_score = -float('inf')
 
@@ -40,6 +41,7 @@ class Trainer:
             self.initialise_session()
         elif self.options.restore:
             self.restore_session()
+            restore = True
         else:
             raise ValueError('Must specify --config or --restore path.')
 
@@ -104,9 +106,10 @@ class Trainer:
         self.index = None
         self.testing_indexes = [[2017, 1, 30], [2017, 4, 15], [2017, 7, 12], [2017, 10, 15]]
         #self.testing_indexes = [[2018, 8, 1], [2018, 8, 3], [2018, 8, 22], [2018, 8, 31]]
-        for Y, M, D in self.testing_indexes:
-            os.mkdir(os.path.join(self.session_name, '{}_{}_{}'.format(D, M, Y)))
-        os.mkdir(os.path.join(self.session_name, 'Random'))
+        if not restore:
+            for Y, M, D in self.testing_indexes:
+                os.mkdir(os.path.join(self.session_name, '{}_{}_{}'.format(D, M, Y)))
+            os.mkdir(os.path.join(self.session_name, 'Random'))
 
     @abstractmethod
     def create_data(self):
@@ -262,31 +265,36 @@ class Trainer:
 
     def evaluate_epoch(self):
         self.model.eval()
-        self.testing_indexes.append([2017, random.randint(1, 12), random.randint(1, 29)])
+        self.testing_indexes.append([2017, random.randint(1, 12), random.randint(1, 28)])
         #self.testing_indexes.append([2018, 8, random.randint(1, 29)])
         j = 0
         for [Y, M, D] in self.testing_indexes:
             time = []
             nowcast = []
             actual = []
+            persistence = []
             MAE = 0
+            MAEp = 0
             total = 0
             for H in range(5, 20):
                 for i in range(0, 4):
                     Minu = i * 15
                     self.index = [Y, M, D, H, Minu]
-                    n, a = self.evaluate_sample()
+                    n, a, p = self.evaluate_sample()
                     _, _, _, H_lf, Minu_lf = self.helper.lookforward_index(Y, M, D, H, Minu)
                     _, _, _, _, Minu_lf = self.helper.string_index(Y, M, D, H_lf, Minu_lf)
                     time.append('{}:{}'.format(H_lf, Minu_lf))
                     nowcast.append(n)
                     actual.append(a)
+                    persistence.append(p)
                     MAE += np.abs(a - n)
+                    MAEp += np.abs(a - p)
                     total += 1
             plt.plot(time, actual)
             plt.plot(time, nowcast)
-            plt.title('EPOCH: {}. {}/{}/{}  ||  MAE = {:0.2f}'.format(self.epoch, D, M, Y, MAE/total))
-            plt.legend(['actual', 'forecast'])
+            plt.plot(time, persistence, '-.')
+            plt.title('EPOCH: {}. {}/{}/{}  ||  MAE = {:0.2f} || MAE_per = {:0.2f}'.format(self.epoch, D, M, Y, MAE/total, MAEp/total))
+            plt.legend(['actual', 'forecast', 'persistence'])
             plt.xticks(
                 ['6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
                  '17:00', '18:00', '19:00'], rotation=90)
@@ -308,7 +316,11 @@ class Trainer:
         self.sample = self.create_sample()
         forecast = self.forward_model(self.sample) * self.std + self.mean
         actual = self.sample['irradiance'][0] * self.std + self.mean
-        return forecast.item(), actual.item()
+        # CNN
+        #persistence = self.sample['aux_data'][0][8] * self.std + self.mean
+        # lstm
+        persistence = self.sample['aux_data'][0][-1][6] * self.std + self.mean
+        return forecast.item(), actual.item(), persistence.item()
 
 
     def print_log(self, loss, step_duration, data_fetch_time, model_update_time):
@@ -338,14 +350,12 @@ class Trainer:
         checkpoint_name = os.path.join(self.session_name, 'checkpoint')
         map_location = 'cuda' if self.config.gpu else 'cpu'
         checkpoint = torch.load(checkpoint_name, map_location=map_location)
-        print(checkpoint['model'])
 
         self.model.load_state_dict(checkpoint['model'])
         self.optimiser.load_state_dict(checkpoint['optimiser'])
         self.global_step = checkpoint['global_step']
         self.best_score = checkpoint['best_score']
         print('Loaded model and optimiser weights from {}\n'.format(checkpoint_name))
-        print(self.model)
 
     def _get_next_batch(self):
         if self._train_dataloader_iter is None:

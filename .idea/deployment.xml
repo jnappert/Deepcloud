@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData">
+  <component name="PublishConfigData" serverName="mario">
     <serverData>
-      <paths name="qp208@windle:22">
+      <paths name="mario">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/zelda/qp208/Documents/Cambridge/Research_project/deepcloud" local="$PROJECT_DIR$" web="/" />
+            <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

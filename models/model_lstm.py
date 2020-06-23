@@ -16,7 +16,7 @@ class LSTMModel(nn.Module):
         super().__init__()
 
         self.layers = 2
-        self.seq_len = 2
+        self.seq_len = 3
         self.input_dim = 142
         self.hidden_dim = 142
 
@@ -77,18 +77,23 @@ class LSTMModel(nn.Module):
                        torch.zeros(self.layers, self.seq_len, self.hidden_dim))
 
     def forward(self, image, aux_data):
-        image_t_minus = image[:, 0, :, :].unsqueeze(1)
-        image_t_0 = image[:, 1, :, :].unsqueeze(1)
-        aux_data_t_minus = aux_data[:, 0, :]  #.float()
-        aux_data_t_0 = aux_data[:, 1, :]  #.float()
-        x1 = self.cnn_model_keras(image_t_minus)
+        image_t_minus2 = image[:, 0, :, :].unsqueeze(1)
+        image_t_minus = image[:, 1, :, :].unsqueeze(1)
+        image_t_0 = image[:, 2, :, :].unsqueeze(1)
+        aux_data_t_minus2 = aux_data[:, 0, :]  #.float()
+        aux_data_t_minus = aux_data[:, 1, :]  # .float()
+        aux_data_t_0 = aux_data[:, 2, :]  #.float()
+        x1 = self.cnn_model_keras(image_t_minus2)
+        y1 = self.cnn_model_keras(image_t_minus)
         z1 = self.cnn_model_keras(image_t_0)
-        x2 = self.aux_data_model(aux_data_t_minus)
+        x2 = self.aux_data_model(aux_data_t_minus2)
+        y2 = self.aux_data_model(aux_data_t_minus)
         z2 = self.aux_data_model(aux_data_t_0)
         x = cat((x1, x2), dim=1).unsqueeze(0)
+        y = cat((y1, y2), dim=1).unsqueeze(0)
         z = cat((z1, z2), dim=1).unsqueeze(0)
         #print(x.size(), z.size())
-        input = cat((x, z), 0)
+        input = cat((x, y, z), 0)
         #print(input.size())
         # LSTM layer
         lstm_out, self.hidden = self.lstm(input)

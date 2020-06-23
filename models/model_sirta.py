@@ -15,12 +15,21 @@ class SirtaModel(nn.Module):
         super().__init__()
         self.channels = channels
 
-        self.aux_data_model = nn.Sequential(OrderedDict([
+        """self.aux_data_model = nn.Sequential(OrderedDict([
             ('aux_fc_1_linear', nn.Linear(8, 16)), #input is 8 for forecasting cause of irradiances
             ('aux_fc_1_act', nn.ReLU()),
             ('aux_fc_2_linear', nn.Linear(16, 16)),
             ('aux_fc_2_act', nn.ReLU()),
             ('aux_fc_3_linear', nn.Linear(16, 16)),
+            ('aux_fc_3_act', nn.ReLU()),
+        ]))"""
+
+        self.aux_data_model = nn.Sequential(OrderedDict([
+            ('aux_fc_1_linear', nn.Linear(9, 18)),  # input is 8 for forecasting cause of irradiances
+            ('aux_fc_1_act', nn.ReLU()),
+            ('aux_fc_2_linear', nn.Linear(18, 18)),
+            ('aux_fc_2_act', nn.ReLU()),
+            ('aux_fc_3_linear', nn.Linear(18, 18)),
             ('aux_fc_3_act', nn.ReLU()),
         ]))
 
@@ -50,7 +59,7 @@ class SirtaModel(nn.Module):
         ]))
 
         self.cat_model_keras = nn.Sequential(OrderedDict([
-            ('cat_fc_1_linear', nn.Linear(128, 64)), #this is 144 for forecasting, 128 for nowcasting
+            ('cat_fc_1_linear', nn.Linear(146, 64)), #this is 144 for forecasting, 128 for nowcasting
             ('cat_fc_1_act', nn.ReLU()),
             ('cat_fc_2_linear', nn.Linear(64, 32)),
             ('cat_fc_2_act', nn.ReLU()),
@@ -110,10 +119,10 @@ class SirtaModel(nn.Module):
 
     def forward(self, images, aux_data):
         #x1 = self.cnn_resnet_model(images)
-        x = self.cnn_model_keras(images)
+        x1 = self.cnn_model_keras(images)
 
-        #x2 = self.aux_data_model(aux_data)
-        #x = cat((x1, x2), dim=1)
+        x2 = self.aux_data_model(aux_data)
+        x = cat((x1, x2), dim=1)
 
         x = self.cat_model_keras(x)
         return x
