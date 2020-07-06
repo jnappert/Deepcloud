@@ -2,6 +2,13 @@
 <project version="4">
   <component name="PublishConfigData" serverName="mario">
     <serverData>
+      <paths name="jn424@gate.eng.cam.ac.uk:22">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="mario">
         <serverdata>
           <mappings>

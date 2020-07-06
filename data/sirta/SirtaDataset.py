@@ -16,7 +16,7 @@ In sirtadataset, model_sirta, trainer_sirta_sets_creation"""
 import socket
 
 from data.sirta.directories import data_images_dir, data_irradiance_dir, eumetsat_sat_images, \
-    data_sirta_grid, data_clear_sky_irradiance_dir
+    data_sirta_grid, data_clear_sky_irradiance_dir, processed_data_sirta_grid
 
 
 # Ignore warnings
@@ -30,7 +30,7 @@ class SirtaDataset(Dataset):
     """Sirta dataset."""
 
     def __init__(self, seq_indexes, shades, IMG_SIZE, lookback, lookforward, step, averaged_15min_dataset, mean, std,
-                 helper, preprocessed_dataset=True, transform=None):
+                 helper, preprocessed_dataset=True, sat_images=True, transform=None):
         # def __init__(self, computer, nb_training_seq, lookback, lookforward, mode=None, transform=None):
         """
         Args:
@@ -57,7 +57,7 @@ class SirtaDataset(Dataset):
         self.mean = mean
         self.std = std
         self.helper = helper
-        self.sat_images = False
+        self.sat_images = sat_images
 
         # self.training_seq_idexes = []
         # self.validation_seq_idexes = []
@@ -68,10 +68,12 @@ class SirtaDataset(Dataset):
 
     def __getitem__(self, idx, train=True, lstm=False):
 
-        lstm = True
+        #lstm = True
 
-        if self.sat_images == True:
+        if self.sat_images:
             DATADIR = eumetsat_sat_images(self.computer)
+        elif self.preprocessed_dataset:
+            DATADIR = processed_data_sirta_grid(self.computer)
         else:
             DATADIR = data_sirta_grid(self.computer)
 
@@ -154,13 +156,6 @@ class SirtaDataset(Dataset):
                     min_1440_target = minu_target + 60 * h_target
                     target = df['global_solar_flux'][min_1440_target]
 
-                # mean/std for minute by minute
-                # mean_irradiance = 434.4
-                # std_irradiance = 288.8
-                # mean/std for 15 min avg
-                # mean_irradiance = 471.0
-                # std_irradiance = 281.5
-                # self
                 mean_irradiance = self.mean
                 std_irradiance = self.std
 
@@ -184,7 +179,12 @@ class SirtaDataset(Dataset):
 
                 else:
                     if self.sat_images:
-                        file_name_1 = '{}{}/HRV/{}{}.jpg'.format(M, D, H, Minu)
+                        # HRV
+                        #file_name_1 = '{}{}/HRV/{}{}.jpg'.format(M, D, H, Minu)
+                        # Colour
+                        file_name_1 = '{}{}/Colour/{}{}.jpg'.format(M, D, H, Minu)
+                    elif self.preprocessed_dataset:
+                        file_name_1 = '{}{}/{}{}.jpg'.format(M, D, H, Minu)
                     else:
                         file_name_1 = 'Palaiseau_ghi_{}{}{}.csv'.format(y, M, D)
                     file_name_2 = '{}{}{}{}{}00_03.jpg'.format(y, M, D, H, Minu)
@@ -193,98 +193,90 @@ class SirtaDataset(Dataset):
 
                     if os.path.isfile(path_image_1) == True:
 
-                        if self.preprocessed_dataset:
+                        if self.shades == 'RGB' or self.shades == 'Bs' or self.shades == 'RBR':
+                            img_array_BGR_1 = cv2.imread(path_image_1, 1)  # , cv2.IMREAD_GRAYSCALE)
+                            img_array_1 = cv2.cvtColor(img_array_BGR_1, cv2.COLOR_BGR2RGB)
+                            img_array_BGR_2 = cv2.imread(path_image_2, 1)  # , cv2.IMREAD_GRAYSCALE)
+                            img_array_2 = cv2.cvtColor(img_array_BGR_2, cv2.COLOR_BGR2RGB)
 
-                            new_array_1 = cv2.imread((path_image_1), cv2.IMREAD_GRAYSCALE)
-                            new_array_2 = cv2.imread((path_image_2), cv2.IMREAD_GRAYSCALE)
+
+                        elif self.shades == 'Y':
+                            img_array_1 = cv2.imread((path_image_1), cv2.IMREAD_GRAYSCALE)
+                            img_array_2 = cv2.imread((path_image_2), cv2.IMREAD_GRAYSCALE)
+
+                        # -----------------------------------------------------------------------------------------
+                        # image set up for satellite grid
+                        # -----------------------------------------------------------------------------------------
+                        elif self.shades == 'SAT':
+                            if self.sat_images:
+                                img_array_redim_1 = cv2.imread(path_image_1, 1) #, cv2.IMREAD_GRAYSCALE)
+                                img_array_1 = cv2.cvtColor(img_array_redim_1, cv2.COLOR_BGR2RGB)
+                                new_array_1 = cv2.resize(img_array_1, (self.IMG_SIZE, self.IMG_SIZE))
+                                #new_array_1[new_array_1 == 0] = 1
+                                new_array_1 = np.array(new_array_1).reshape(3, self.IMG_SIZE, self.IMG_SIZE)
+                            else:
+                                if self.preprocessed_dataset:
+                                    img_array_redim_1 = cv2.imread(path_image_1, cv2.IMREAD_GRAYSCALE)
+                                else:
+                                    img_array_redim_1 = np.reshape(get_sat_grid(y, m, d, h, minu), (41, 25))
+                                new_array_1 = img_array_redim_1
+                                #new_array_1 = cv2.resize(img_array_redim_1, (100, 164))
+                                #new_array_1[new_array_1 == 0] = 1
+                                new_array_1 = np.array(new_array_1).reshape(1, 41, 25)
+
+                        if self.shades != 'SAT':
+                            img_array_redim_1 = img_array_1[35:725, 150:860]
+                            img_array_redim_2 = img_array_2[35:725, 150:860]
+
+                            new_array_1 = cv2.resize(img_array_redim_1, (self.IMG_SIZE, self.IMG_SIZE))
+                            new_array_2 = cv2.resize(img_array_redim_2, (self.IMG_SIZE, self.IMG_SIZE))
 
                             new_array_1[new_array_1 == 0] = 1
                             new_array_2[new_array_2 == 0] = 1
 
+                        if self.shades == 'RGB':
+                            new_array_1 = np.array(new_array_1).reshape(self.IMG_SIZE, self.IMG_SIZE, 3)
+                            new_array_2 = np.array(new_array_2).reshape(self.IMG_SIZE, self.IMG_SIZE, 3)
+
+                        elif self.shades == 'Bs':
+                            new_array_1 = np.array(new_array_1).reshape(self.IMG_SIZE, self.IMG_SIZE, 3)
+                            new_array_1 = np.sqrt(new_array_1[:, :, 1] ** 2 + new_array_1[:, :, 2] ** 2)
+                            new_array_1 = np.array(new_array_1).reshape(self.IMG_SIZE, self.IMG_SIZE, 1)
+
+                            new_array_2 = np.array(new_array_2).reshape(self.IMG_SIZE, self.IMG_SIZE, 3)
+                            new_array_2 = np.sqrt(new_array_2[:, :, 1] ** 2 + new_array_2[:, :, 2] ** 2)
+                            new_array_2 = np.array(new_array_2).reshape(self.IMG_SIZE, self.IMG_SIZE, 1)
+
+                        elif self.shades == 'Y':
                             new_array_1 = np.array(new_array_1).reshape(1, self.IMG_SIZE, self.IMG_SIZE)
                             new_array_2 = np.array(new_array_2).reshape(1, self.IMG_SIZE, self.IMG_SIZE)
 
+                        elif self.shades == 'RBR':
+                            new_array_1 = np.array(new_array_1).reshape(self.IMG_SIZE, self.IMG_SIZE, 3)
+                            new_array_1[:, :, 2][new_array_1[:, :, 2] <= 1.0 / 256.0] = 1.0 / 256.0
+                            new_array_1 = np.divide(new_array_1[:, :, 0], new_array_1[:, :, 2])
 
-                        else:
-                            if self.shades == 'RGB' or self.shades == 'Bs' or self.shades == 'RBR':
-                                img_array_BGR_1 = cv2.imread(path_image_1, 1)  # , cv2.IMREAD_GRAYSCALE)
-                                img_array_1 = cv2.cvtColor(img_array_BGR_1, cv2.COLOR_BGR2RGB)
-                                img_array_BGR_2 = cv2.imread(path_image_2, 1)  # , cv2.IMREAD_GRAYSCALE)
-                                img_array_2 = cv2.cvtColor(img_array_BGR_2, cv2.COLOR_BGR2RGB)
+                            bar = 0.4
+                            new_array_1[new_array_1 < bar] = bar
+                            new_array_1 = new_array_1 - bar
+                            th = 1.1 * (1 - bar)
+                            new_array_1[new_array_1 > th] = th
+                            new_array_1 = new_array_1 / th
 
+                            new_array_2 = np.array(new_array_2).reshape(self.IMG_SIZE, self.IMG_SIZE, 3)
+                            new_array_2[:, :, 2][new_array_2[:, :, 2] <= 0] = 1.0 / 256.0
+                            new_array_2 = np.divide(new_array_2[:, :, 0], new_array_2[:, :, 2])
 
-                            elif self.shades == 'Y':
-                                img_array_1 = cv2.imread((path_image_1), cv2.IMREAD_GRAYSCALE)
-                                img_array_2 = cv2.imread((path_image_2), cv2.IMREAD_GRAYSCALE)
+                            bar = 0.5
+                            new_array_2[new_array_2 < bar] = bar
+                            new_array_2 = new_array_2 - bar
+                            th = 1.2 * (1 - bar)
+                            new_array_2[new_array_2 > th] = th
+                            new_array_2 = new_array_2 / th
+                            new_array_2[new_array_2 < 0.3] = 0.3
 
-                            # -----------------------------------------------------------------------------------------
-                            # image set up for satellite grid
-                            # -----------------------------------------------------------------------------------------
-                            elif self.shades == 'SAT':
-                                if self.sat_images:
-                                    img_array_redim_1 = cv2.imread(path_image_1, cv2.IMREAD_GRAYSCALE)
-                                    new_array_1 = cv2.resize(img_array_redim_1, (self.IMG_SIZE, self.IMG_SIZE))
-                                    new_array_1[new_array_1 == 0] = 1
-                                    new_array_1 = np.array(new_array_1).reshape(1, self.IMG_SIZE, self.IMG_SIZE)
-                                else:
-                                    img_array_redim_1 = np.reshape(get_sat_grid(y, m, d, h, minu), (41, 25))
-                                    new_array_1 = cv2.resize(img_array_redim_1, (100, 164))
-                                    new_array_1[new_array_1 == 0] = 1
-                                    new_array_1 = np.array(new_array_1).reshape(1, 164, 100)
-
-                            if self.shades != 'SAT':
-                                img_array_redim_1 = img_array_1[35:725, 150:860]
-                                img_array_redim_2 = img_array_2[35:725, 150:860]
-
-                                new_array_1 = cv2.resize(img_array_redim_1, (self.IMG_SIZE, self.IMG_SIZE))
-                                new_array_2 = cv2.resize(img_array_redim_2, (self.IMG_SIZE, self.IMG_SIZE))
-
-                                new_array_1[new_array_1 == 0] = 1
-                                new_array_2[new_array_2 == 0] = 1
-
-                            if self.shades == 'RGB':
-                                new_array_1 = np.array(new_array_1).reshape(self.IMG_SIZE, self.IMG_SIZE, 3)
-                                new_array_2 = np.array(new_array_2).reshape(self.IMG_SIZE, self.IMG_SIZE, 3)
-
-                            elif self.shades == 'Bs':
-                                new_array_1 = np.array(new_array_1).reshape(self.IMG_SIZE, self.IMG_SIZE, 3)
-                                new_array_1 = np.sqrt(new_array_1[:, :, 1] ** 2 + new_array_1[:, :, 2] ** 2)
-                                new_array_1 = np.array(new_array_1).reshape(self.IMG_SIZE, self.IMG_SIZE, 1)
-
-                                new_array_2 = np.array(new_array_2).reshape(self.IMG_SIZE, self.IMG_SIZE, 3)
-                                new_array_2 = np.sqrt(new_array_2[:, :, 1] ** 2 + new_array_2[:, :, 2] ** 2)
-                                new_array_2 = np.array(new_array_2).reshape(self.IMG_SIZE, self.IMG_SIZE, 1)
-
-                            elif self.shades == 'Y':
-                                new_array_1 = np.array(new_array_1).reshape(1, self.IMG_SIZE, self.IMG_SIZE)
-                                new_array_2 = np.array(new_array_2).reshape(1, self.IMG_SIZE, self.IMG_SIZE)
-
-                            elif self.shades == 'RBR':
-                                new_array_1 = np.array(new_array_1).reshape(self.IMG_SIZE, self.IMG_SIZE, 3)
-                                new_array_1[:, :, 2][new_array_1[:, :, 2] <= 1.0 / 256.0] = 1.0 / 256.0
-                                new_array_1 = np.divide(new_array_1[:, :, 0], new_array_1[:, :, 2])
-
-                                bar = 0.4
-                                new_array_1[new_array_1 < bar] = bar
-                                new_array_1 = new_array_1 - bar
-                                th = 1.1 * (1 - bar)
-                                new_array_1[new_array_1 > th] = th
-                                new_array_1 = new_array_1 / th
-
-                                new_array_2 = np.array(new_array_2).reshape(self.IMG_SIZE, self.IMG_SIZE, 3)
-                                new_array_2[:, :, 2][new_array_2[:, :, 2] <= 0] = 1.0 / 256.0
-                                new_array_2 = np.divide(new_array_2[:, :, 0], new_array_2[:, :, 2])
-
-                                bar = 0.5
-                                new_array_2[new_array_2 < bar] = bar
-                                new_array_2 = new_array_2 - bar
-                                th = 1.2 * (1 - bar)
-                                new_array_2[new_array_2 > th] = th
-                                new_array_2 = new_array_2 / th
-                                new_array_2[new_array_2 < 0.3] = 0.3
-
-                                new_array_1 = np.array(new_array_1).reshape(self.IMG_SIZE, self.IMG_SIZE, 1)
-                                new_array_2 = np.array(new_array_2).reshape(self.IMG_SIZE, self.IMG_SIZE, 1)
+                            new_array_1 = np.array(new_array_1).reshape(self.IMG_SIZE, self.IMG_SIZE, 1)
+                            new_array_2 = np.array(new_array_2).reshape(self.IMG_SIZE, self.IMG_SIZE, 1)
 
                         # data = [new_array_1, new_array_2, solar_zenith_angle, solar_azimuthal_angle, irradiance, file_name]
 
@@ -307,10 +299,11 @@ class SirtaDataset(Dataset):
             # sample = totensor(sample)
         else:
             # totensor = ToTensor()
-            if not lstm:
+            nowcast = True
+            if not lstm and not nowcast:
                 aux_data = aux_data + past_irradiances
-            sample = {'images': torch.from_numpy(np.concatenate((past_images[-0], past_images[-2], past_images[-1]))),  # forecasting
-                      #'images': torch.from_numpy(past_images[0]),
+            sample = {#'images': torch.from_numpy(np.concatenate((past_images[-0], past_images[-2], past_images[-1]))),  # forecasting
+                      'images': torch.from_numpy(past_images[0]),
                       'aux_data': np.array(aux_data),  #forecasting
                       'irradiance': np.array([target]),
                       'index': np.array(samples_list_indexes)}
@@ -392,21 +385,22 @@ def show_data_batch(sample_batched, mean, std):
     images_batch, irradiance_batch, aux_data_batch, index_batch = \
         sample_batched['images'], sample_batched['irradiance'], sample_batched['aux_data'], sample_batched['index']
 
-    for i in range(0, images_batch.size()[1]):
+    for i in range(0, images_batch.size()[0]):
         plt.figure(i)
-        plt.imshow(images_batch[0, i, :, :], cmap='gray', vmin=0, vmax=255)
+        #plt.imshow(images_batch[0, i, :, :], cmap='gray', vmin=0, vmax=255)
+        plt.imshow(np.array(images_batch[i]).reshape(52, 52, 3))
         # plt.imshow(images_batch[i, :, :], vmin=0, vmax=255)
 
         # plt.imshow(images_batch[i][:, :, 1])
         # plt.imshow(images_batch[i][:, :, 2])
         # plt.imshow(images_batch[i][:, :, 3])
-        y = index_batch[0, i, 0].item()
-        m = index_batch[0, i, 1].item()
-        d = index_batch[0, i, 2].item()
-        h = index_batch[0, i, 3].item()
-        minu = index_batch[0, i, 4].item()
+        y = index_batch[i, 0, 0].item()
+        m = index_batch[i, 0, 1].item()
+        d = index_batch[i, 0, 2].item()
+        h = index_batch[i, 0, 3].item()
+        minu = index_batch[i, 0, 4].item()
         # plt.title('{}:{}, {}/{}/{}: Irradiance = {:0.2f}, Target = {:0.2f}'.format(str(h), str(minu), str(d), str(m), str(y),aux_data_batch[0][i + 6] * 288.8 + 434.4, irradiance_batch[0][0] * 288.8 + 434.4))
         plt.title(
             '{}:{}, {}/{}/{}: Irradiance = {:0.2f}'.format(str(h), str(minu), str(d), str(m), str(y),
-                                                           irradiance_batch[0][0] * std + mean))
+                                                           irradiance_batch[i][0] * std + mean))
         plt.show()

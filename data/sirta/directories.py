@@ -28,7 +28,6 @@ def data_images_dir(computer):
         DATADIR = "/scratches/bagnet_3/qp208/Datasets/Sirta/Sky_images/sfr02_201801_201809/"  # Mario
         DATADIR = "/scratches/bagnet_3/qp208/Datasets_2014_2019/Sirta/Sky_images/"
 
-
     return DATADIR
 
 
@@ -73,7 +72,6 @@ def data_irradiance_dir(computer):
     elif computer == 'mario':
         DATADIR_IRRADIANCE = "/scratch/jn424/Data/Sirta/solys2/"
 
-
     return DATADIR_IRRADIANCE
 
 
@@ -108,11 +106,23 @@ def data_sirta_grid(computer):
 
     return DATADIR_SIRTA_GRID
 
+
+def processed_data_sirta_grid(computer):
+    if computer == 'DESKTOP-A1O805T':
+        DATADIR_SIRTA_GRID = 'D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Satellite/processed_irradiance_data/ghi/'
+    elif computer == 'DESKTOP-2OUOK5M':
+        DATADIR_SIRTA_GRID = "C:/Users/nappe/Documents/Julian/Dissertation/satellite_ghi/"  # Dad's
+    elif computer == 'mario':
+        DATADIR_SIRTA_GRID = "/scratch/jn424/Data/Satellite/processed_irradiance_data/ghi/"
+
+    return DATADIR_SIRTA_GRID
+
+
 def eumetsat_sat_images(computer):
     if computer == 'DESKTOP-A1O805T':
         DATADIR_EUMETSAT_IMAGES = 'D:/Users/julia/Documents/Cambridge Work/Dissertation/Data/Sirta/Satellite/eumetsat_images/'
-    elif computer == 'DESKTOP-2OUOK5M':
-        DATADIR_EUMETSAT_IMAGES = "C:/Users/nappe/Documents/Julian/Dissertation/satellite_ghi/"  # Dad's
+    elif computer == 'mario':
+        DATADIR_EUMETSAT_IMAGES = "/scratch/jn424/Data/Satellite/eumetsat_images/"
 
     return DATADIR_EUMETSAT_IMAGES
 

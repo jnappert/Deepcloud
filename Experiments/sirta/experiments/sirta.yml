@@ -1,31 +1,33 @@
 output_path: 'Experiments/sirta/experiments/'
 #tag: 'nowcast_eumetsat_images'
-tag: 'lstm_1hour_3imagesback'
+#tag: 'lstm_1hour_30min_3imagesback'
+tag: 'eumetsat_nowcastANN'
 
 #shades: 'Y'
 shades: 'SAT'
-IMG_SIZE: 128
-nb_training_seq: 5000 #2500
-nb_validation_seq: 1250 #625  #val_iterations * batch size??
-lookback: 2
-lookforward: 4
+IMG_SIZE: 52
+nb_training_seq: 3000 #2500
+nb_validation_seq: 750 #625  #val_iterations * batch size??
+lookback: 0
+lookforward: 0
 step: 15
 
 #epoch = n_iterations/nb_training*batch size
-batch_size: 10 # 5
-n_iterations: 50000 #10000 # = batch_size*nb_epoch
+batch_size: 5 #10 # 5
+n_iterations: 30000 #10000 # = batch_size*nb_epoch
 print_iterations: 1 # print_iterations*batch_size = nb_training_seq (1 epoch)
 vis_iterations: 1000
 #val_iterations: 100
 n_workers: 8 #normally 4
 gpu: True
-gpu_nb: 0
+gpu_nb: 1
 preprocessed_dataset: False
+sat_images: True
 averaged_15min_dataset: True
 
 # Optimiser
 learning_rate: 0.0005
-weight_decay: 0.000
+weight_decay: 0.0001
 
 
 #python run_training.py --config Experiments/sirta/experiments/sirta.yml

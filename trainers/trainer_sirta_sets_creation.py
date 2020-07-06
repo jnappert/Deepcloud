@@ -15,13 +15,13 @@ import socket
 from time import sleep
 
 from data.sirta.directories import data_images_dir, eumetsat_sat_images, data_sirta_grid, \
-    data_clear_sky_irradiance_dir, data_irradiance_dir
+    data_clear_sky_irradiance_dir, data_irradiance_dir, processed_data_sirta_grid
 
 
 class Sirta_seq_generator():
 
     def __init__(self, nb_training_seq, nb_validation_seq, lookback, lookforward, step, averaged_15min_dataset, helper,
-                 computer=socket.gethostname(), preprocessed_dataset=True):
+                 computer=socket.gethostname(), preprocessed_dataset=True, sat_images=True):
         self.nb_training_seq = nb_training_seq
         self.nb_validation_seq = nb_validation_seq
         self.lookback = lookback
@@ -31,7 +31,7 @@ class Sirta_seq_generator():
         self.step = step
         self.averaged_15min_dataset = averaged_15min_dataset
         self.helper = helper
-        self.sat_images = False
+        self.sat_images = sat_images
         self.training_seq_indexes, self.validation_seq_indexes, self.mean, self.std = self.create_train_val_list(
             nb_training_seq,
             nb_validation_seq, lookback,
@@ -49,6 +49,8 @@ class Sirta_seq_generator():
 
         if self.sat_images:
             DATADIR = eumetsat_sat_images(computer)
+        elif self.preprocessed_dataset:
+            DATADIR = processed_data_sirta_grid(computer)
         else:
             DATADIR = data_sirta_grid(computer)
 
@@ -63,7 +65,21 @@ class Sirta_seq_generator():
             path = os.path.join(DATADIR, folder_name)
             if self.sat_images:
                 if os.path.isdir(path):
+                    # HRV
                     file_name_1 = '{}{}/HRV/{}{}.jpg'.format(M, D, H, minut)
+                    # Colour
+                    file_name_1 = '{}{}/Colour/{}{}.jpg'.format(M, D, H, minut)
+                    path_image_1 = os.path.join(path, file_name_1)
+                    if os.path.isfile(path_image_1) != True:
+                        ans = False
+                    elif minu > 59:
+                        ans = False
+                else:
+                    print('False path: ', path)
+                    ans = False
+            elif self.preprocessed_dataset:
+                if os.path.isdir(path):
+                    file_name_1 = '{}{}/{}{}.jpg'.format(M, D, H, minut)
                     path_image_1 = os.path.join(path, file_name_1)
                     if os.path.isfile(path_image_1) != True:
                         ans = False
@@ -123,6 +139,8 @@ class Sirta_seq_generator():
 
         if self.sat_images:
             DATADIR = eumetsat_sat_images(computer)
+        elif self.preprocessed_dataset:
+            DATADIR = processed_data_sirta_grid(computer)
         else:
             DATADIR = data_sirta_grid(computer)
 
@@ -188,7 +206,7 @@ class Sirta_seq_generator():
             y = 2018
             # for m in range(2, 10):  # range(1,13), m = month
             # if you wanna use sky images, month has to be from 6 - 8 and days from 1 to 6
-            for m in range(3, 11):  # range(1,13), m = month
+            for m in range(5, 9):  # range(1,13), m = month
                 # if m <= 9:
                 # M = '0{}'.format(m)
                 # else:
@@ -204,7 +222,7 @@ class Sirta_seq_generator():
                     path = os.path.join(DATADIR, folder_name)
 
                     if os.path.isdir(path) == True:
-                        h = 9
+                        h = 8
                         # h = 12
                         minu = random.randint(0, int(60 / self.step) - 1)
                         # minu = 12
@@ -226,18 +244,18 @@ class Sirta_seq_generator():
                                     validation_list.append([m, d, h, minu])
                             y, m, d, h, minu = self.find_next_seq_index(y, m, d, h, minu, lookback, lookforward)
 
-        #random.shuffle(training_list)
-        #random.shuffle(validation_list)
+        random.shuffle(training_list)
+        random.shuffle(validation_list)
         print('\nNumber of Sequences available given the constraints :',
               np.shape(training_list)[0] + np.shape(validation_list)[0])
         print('\nNumber of Sequences available in the training list :', np.shape(training_list)[0])
         print('Number of Sequences available in the validation list :', np.shape(validation_list)[0])
 
-        #training_seq_indexes = training_list[0:nb_training_seq]
-        #validation_seq_indexes = validation_list[0:nb_validation_seq]
+        training_seq_indexes = training_list[0:nb_training_seq]
+        validation_seq_indexes = validation_list[0:nb_validation_seq]
         # for sequential in order - LSTM
-        training_seq_indexes = training_list[800:800 + nb_training_seq]
-        validation_seq_indexes = validation_list[470:470 + nb_validation_seq]
+        #training_seq_indexes = training_list[800:800 + nb_training_seq]
+        #validation_seq_indexes = validation_list[470:470 + nb_validation_seq]
 
         print('\nNumber of Sequences in the training list :', len(training_seq_indexes))
         print('Number of Sequences in the validation list :', len(validation_seq_indexes))
