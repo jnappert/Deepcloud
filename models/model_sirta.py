@@ -13,7 +13,7 @@ from layers.preprocessing import ImagePreprocessing
 class SirtaModel(nn.Module):
     def __init__(self, channels):
         super().__init__()
-        self.channels = 3  #channels
+        self.channels = 4  #channels
 
         """self.aux_data_model = nn.Sequential(OrderedDict([
             ('aux_fc_1_linear', nn.Linear(8, 16)), #input is 8 for forecasting cause of irradiances

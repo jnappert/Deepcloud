@@ -1,11 +1,10 @@
 output_path: 'Experiments/sirta/experiments/'
 #tag: 'nowcast_eumetsat_images'
-#tag: 'lstm_1hour_30min_3imagesback'
-tag: 'eumetsat_nowcastANN'
+#tag: 'test'
+tag: 'eumetsat_HRVandColour_nowcastANN'
 
-#shades: 'Y'
 shades: 'SAT'
-IMG_SIZE: 52
+IMG_SIZE: 156 #52
 nb_training_seq: 3000 #2500
 nb_validation_seq: 750 #625  #val_iterations * batch size??
 lookback: 0

@@ -66,7 +66,7 @@ class Sirta_seq_generator():
             if self.sat_images:
                 if os.path.isdir(path):
                     # HRV
-                    file_name_1 = '{}{}/HRV/{}{}.jpg'.format(M, D, H, minut)
+                    #file_name_1 = '{}{}/HRV/{}{}.jpg'.format(M, D, H, minut)
                     # Colour
                     file_name_1 = '{}{}/Colour/{}{}.jpg'.format(M, D, H, minut)
                     path_image_1 = os.path.join(path, file_name_1)
