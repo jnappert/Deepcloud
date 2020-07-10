@@ -105,7 +105,7 @@ class Trainer:
         # Testing Indexes
         self.index = None
         #self.testing_indexes = [[2017, 1, 30], [2017, 4, 15], [2017, 7, 12], [2017, 10, 15]]
-        self.testing_indexes = [[2018, 8, 1], [2018, 8, 3], [2018, 8, 22], [2018, 8, 31]]
+        self.testing_indexes = [[2018, 7, 12], [2018, 8, 29], [2018, 6, 6], [2018, 5, 4]]
         if not restore:
             for Y, M, D in self.testing_indexes:
                 os.mkdir(os.path.join(self.session_name, '{}_{}_{}'.format(D, M, Y)))
@@ -266,7 +266,7 @@ class Trainer:
     def evaluate_epoch(self):
         self.model.eval()
         #self.testing_indexes.append([2017, random.randint(1, 12), random.randint(1, 28)])
-        self.testing_indexes.append([2018, 8, random.randint(1, 29)])
+        self.testing_indexes.append([2018, random.randint(5, 8), random.randint(1, 28)])
         j = 0
         for [Y, M, D] in self.testing_indexes:
             time = []
@@ -277,31 +277,31 @@ class Trainer:
             MAEp = 0
             total = 0
             #for H in range(5, 20):
-            for H in range(8, 18):
+            for H in range(9, 18):
                 for i in range(0, 4):
                     Minu = i * 15
                     self.index = [Y, M, D, H, Minu]
-                    n, a = self.evaluate_sample()
+                    n, a, p = self.evaluate_sample()
                     _, _, _, H_lf, Minu_lf = self.helper.lookforward_index(Y, M, D, H, Minu)
                     _, _, _, _, Minu_lf = self.helper.string_index(Y, M, D, H_lf, Minu_lf)
                     time.append('{}:{}'.format(H_lf, Minu_lf))
                     nowcast.append(n)
                     actual.append(a)
-                    #persistence.append(p)
+                    persistence.append(p)
                     MAE += np.abs(a - n)
-                    #MAEp += np.abs(a - p)
+                    MAEp += np.abs(a - p)
                     total += 1
             plt.plot(time, actual)
             plt.plot(time, nowcast)
-            #plt.plot(time, persistence, '-.')
-            plt.title('EPOCH: {}. {}/{}/{}  ||  MAE = {:0.2f} || MAE_per = {:0.2f}'.format(self.epoch, D, M, Y, MAE/total, 0))
-            #plt.legend(['actual', 'forecast', 'persistence'])
+            plt.plot(time, persistence, '-.')
+            plt.title('EPOCH: {}. {}/{}/{}  ||  MAE = {:0.2f} || MAE_per = {:0.2f}'.format(self.epoch, D, M, Y, MAE/total, MAEp/total))
+            plt.legend(['actual', 'forecast', 'persistence'])
             plt.legend(['actual', 'forecast'])
             """plt.xticks(
                 ['6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
                  '17:00', '18:00', '19:00'], rotation=90)"""
             plt.xticks(
-                ['8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
+                ['9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
                  '17:00', '18:00'], rotation=90)
             if j < 4:
                 fname = os.path.join(self.session_name, '{}_{}_{}/Epoch_{}.png'.format(D, M, Y, self.epoch))
@@ -322,8 +322,8 @@ class Trainer:
         # CNN
         #persistence = self.sample['aux_data'][0][8] * self.std + self.mean
         # lstm
-        #persistence = self.sample['aux_data'][0][-1][6] * self.std + self.mean
-        return forecast.item(), actual.item()#, persistence.item()
+        persistence = self.sample['aux_data'][0][-1][6] * self.std + self.mean
+        return forecast.item(), actual.item(), persistence.item()
 
 
     def print_log(self, loss, step_duration, data_fetch_time, model_update_time):

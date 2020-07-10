@@ -64,7 +64,7 @@ class SirtaTrainer(Trainer):
         return self.mean, self.std
 
     def create_model(self, lstm=False):
-        #lstm = True
+        lstm = True
         if not lstm:
             self.model = SirtaModel(self.config.lookback + 1)
         else:
@@ -82,7 +82,7 @@ class SirtaTrainer(Trainer):
         self.train_metrics = RegMetrics('train', self.tensorboard, self.session_name, self.skill_score, self.std)
         self.val_metrics = RegMetrics('val', self.tensorboard, self.session_name, self.skill_score, self.std)
 
-    def forward_model(self, batch, lstm=False):
+    def forward_model(self, batch):
         return self.model(batch['images'], batch['aux_data'].float())
 
     def forward_loss(self, batch, output):

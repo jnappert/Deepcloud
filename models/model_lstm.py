@@ -19,6 +19,7 @@ class LSTMModel(nn.Module):
         self.seq_len = 3
         self.input_dim = 142
         self.hidden_dim = 142
+        self.channels = 1
 
         self.aux_data_model = nn.Sequential(OrderedDict([
             ('aux_fc_1_linear', nn.Linear(7, 14)), #input is 8 for forecasting cause of irradiances
@@ -32,7 +33,7 @@ class LSTMModel(nn.Module):
         # First Convblock should be 4 for shades = Y, set to 2 for SAT
         self.cnn_model_keras = nn.Sequential(OrderedDict([
              ('image_preprocessing', ImagePreprocessing()),
-             ('conv_0', ConvBlock(1, 64, stride=2, kernel_size=7, norm='none')),
+             ('conv_0', ConvBlock(self.channels, 64, stride=2, kernel_size=7, norm='none')),
              ('conv_1', ConvBlock(64, 32, stride=2, kernel_size=7, norm='none')),
              ('res_1', ResBlock(32, 32, kernel_size=5, norm='none')),
              ('conv_2', ConvBlock(32, 32, kernel_size=5, stride=2, norm='none')),

@@ -244,18 +244,18 @@ class Sirta_seq_generator():
                                     validation_list.append([m, d, h, minu])
                             y, m, d, h, minu = self.find_next_seq_index(y, m, d, h, minu, lookback, lookforward)
 
-        random.shuffle(training_list)
-        random.shuffle(validation_list)
+        #random.shuffle(training_list)
+        #random.shuffle(validation_list)
         print('\nNumber of Sequences available given the constraints :',
               np.shape(training_list)[0] + np.shape(validation_list)[0])
         print('\nNumber of Sequences available in the training list :', np.shape(training_list)[0])
         print('Number of Sequences available in the validation list :', np.shape(validation_list)[0])
 
-        training_seq_indexes = training_list[0:nb_training_seq]
-        validation_seq_indexes = validation_list[0:nb_validation_seq]
+        #training_seq_indexes = training_list[0:nb_training_seq]
+        #validation_seq_indexes = validation_list[0:nb_validation_seq]
         # for sequential in order - LSTM
-        #training_seq_indexes = training_list[800:800 + nb_training_seq]
-        #validation_seq_indexes = validation_list[470:470 + nb_validation_seq]
+        training_seq_indexes = training_list[438:438 + nb_training_seq]
+        validation_seq_indexes = validation_list[134:134 + nb_validation_seq]
 
         print('\nNumber of Sequences in the training list :', len(training_seq_indexes))
         print('Number of Sequences in the validation list :', len(validation_seq_indexes))

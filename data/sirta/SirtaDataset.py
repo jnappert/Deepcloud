@@ -68,7 +68,7 @@ class SirtaDataset(Dataset):
 
     def __getitem__(self, idx, train=True, lstm=False):
 
-        #lstm = True
+        lstm = True
 
         if self.sat_images:
             DATADIR = eumetsat_sat_images(self.computer)
@@ -286,8 +286,8 @@ class SirtaDataset(Dataset):
                         if self.shades != 'SAT':
                             past_images.append([new_array_1, new_array_2])
                         else:
-                            #past_images.append(new_array_1)
-                            past_images = np.concatenate((new_array_1, new_array_2))
+                            past_images.append(new_array_2)
+                            #past_images = np.concatenate((new_array_1, new_array_2))
 
         if self.shades != 'SAT':
             [img_short_lb0, img_long_lb0] = past_images[-0]
@@ -303,11 +303,11 @@ class SirtaDataset(Dataset):
             # sample = totensor(sample)
         else:
             # totensor = ToTensor()
-            nowcast = True
+            nowcast = FileExistsError
             if not lstm and not nowcast:
                 aux_data = aux_data + past_irradiances
-            sample = {#'images': torch.from_numpy(np.concatenate((past_images[-0], past_images[-2], past_images[-1]))),  # forecasting
-                      'images': torch.from_numpy(past_images), #[0]), # this is for regular just colour or hrv
+            sample = {'images': torch.from_numpy(np.concatenate((past_images[-0], past_images[-2], past_images[-1]))),  # forecasting
+                      #'images': torch.from_numpy(past_images[0]), # this is for regular just colour or hrv
                       'aux_data': np.array(aux_data),  #forecasting
                       'irradiance': np.array([target]),
                       'index': np.array(samples_list_indexes)}
@@ -389,10 +389,11 @@ def show_data_batch(sample_batched, mean, std):
     images_batch, irradiance_batch, aux_data_batch, index_batch = \
         sample_batched['images'], sample_batched['irradiance'], sample_batched['aux_data'], sample_batched['index']
 
-    for i in range(0, images_batch.size()[0]):
+    for i in range(1, images_batch.size()[0]):
+        #plt.figure(i*2 - 1)
         plt.figure(i)
-        #plt.imshow(images_batch[0, i, :, :], cmap='gray', vmin=0, vmax=255)
-        plt.imshow(np.array(images_batch[i]).reshape(52, 52, 3))
+        plt.imshow(images_batch[i, 0, :, :], cmap='gray', vmin=0, vmax=255)
+        #plt.imshow(np.array(images_batch[i, 0:3, :, :]).reshape(156, 156, 3))
         # plt.imshow(images_batch[i, :, :], vmin=0, vmax=255)
 
         # plt.imshow(images_batch[i][:, :, 1])
@@ -407,4 +408,7 @@ def show_data_batch(sample_batched, mean, std):
         plt.title(
             '{}:{}, {}/{}/{}: Irradiance = {:0.2f}'.format(str(h), str(minu), str(d), str(m), str(y),
                                                            irradiance_batch[i][0] * std + mean))
+        #plt.figure(2*i)
+        #plt.imshow(images_batch[i, 3, :, :], cmap='gray', vmin=0, vmax=255)
         plt.show()
+        #plt.close()
