@@ -63,10 +63,19 @@ class SirtaTrainer(Trainer):
     def mean_std(self):
         return self.mean, self.std
 
-    def create_model(self, lstm=False):
-        lstm = True
-        if not lstm:
+    def create_model(self, lstm=False, nowcast=False, image_type='RGB_HRV'):
+        #lstm = True
+        nowcast = True
+        if image_type == 'HRV':
+            channels = 1
+        if image_type == 'RGB':
+            channels = 3
+        if image_type == 'RGB_HRV':
+            channels = 4
+        if not lstm and not nowcast:
             self.model = SirtaModel(self.config.lookback + 1)
+        elif not lstm and nowcast:
+            self.model = SirtaModel(channels)
         else:
             self.model = LSTMModel()
             #self.model.reset_hidden_state()

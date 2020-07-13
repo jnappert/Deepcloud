@@ -1,16 +1,16 @@
 output_path: 'Experiments/sirta/experiments/'
 #tag: 'nowcast_eumetsat_images'
-tag: 'test3000'
-#tag: 'eumetsat_HRVandColour_nowcastANN'
+#tag: 'test3000'
+tag: 'eumetsat_HRV_nowcastANN_100epoch_randomval'
 #tag: 'eumetsat_HRV_1hourForecast_highres'
 
 shades: 'SAT'
 IMG_SIZE: 156 #52
 nb_training_seq: 3000 #2500
 nb_validation_seq: 750 #625  #val_iterations * batch size??
-lookback: 2
-lookforward: 2
-step: 30
+lookback: 0
+lookforward: 0
+step: 15
 
 #epoch = n_iterations/nb_training*batch size
 batch_size: 5 #10 # 5
@@ -20,7 +20,7 @@ vis_iterations: 1000
 #val_iterations: 100
 n_workers: 8 #normally 4
 gpu: True
-gpu_nb: 0
+gpu_nb: 1
 preprocessed_dataset: False
 sat_images: True
 averaged_15min_dataset: True

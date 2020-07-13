@@ -58,6 +58,7 @@ class SirtaDataset(Dataset):
         self.std = std
         self.helper = helper
         self.sat_images = sat_images
+        self.image_type = 'RGB_HRV'
 
         # self.training_seq_idexes = []
         # self.validation_seq_idexes = []
@@ -68,7 +69,7 @@ class SirtaDataset(Dataset):
 
     def __getitem__(self, idx, train=True, lstm=False):
 
-        lstm = True
+        #lstm = True
 
         if self.sat_images:
             DATADIR = eumetsat_sat_images(self.computer)
@@ -285,9 +286,15 @@ class SirtaDataset(Dataset):
 
                         if self.shades != 'SAT':
                             past_images.append([new_array_1, new_array_2])
+                        elif self.sat_images:
+                            if self.image_type == 'RGB':
+                                past_images.append(new_array_1)
+                            if self.image_type == 'HRV':
+                                past_images.append(new_array_2)
+                            if self.image_type == 'RGB_HRV':
+                                past_images = np.concatenate((new_array_1, new_array_2))
                         else:
-                            past_images.append(new_array_2)
-                            #past_images = np.concatenate((new_array_1, new_array_2))
+                            past_images.append(new_array_1)
 
         if self.shades != 'SAT':
             [img_short_lb0, img_long_lb0] = past_images[-0]
@@ -303,12 +310,12 @@ class SirtaDataset(Dataset):
             # sample = totensor(sample)
         else:
             # totensor = ToTensor()
-            nowcast = FileExistsError
+            nowcast = True
             if not lstm and not nowcast:
                 aux_data = aux_data + past_irradiances
-            sample = {'images': torch.from_numpy(np.concatenate((past_images[-0], past_images[-2], past_images[-1]))),  # forecasting
-                      #'images': torch.from_numpy(past_images[0]), # this is for regular just colour or hrv
-                      'aux_data': np.array(aux_data),  #forecasting
+            sample = {#'images': torch.from_numpy(np.concatenate((past_images[-0], past_images[-2], past_images[-1]))),  # forecasting
+                      'images': torch.from_numpy(past_images), #[0]), # this is for regular just colour or hrv
+                      'aux_data': np.array(aux_data),  # forecasting
                       'irradiance': np.array([target]),
                       'index': np.array(samples_list_indexes)}
             # sample = {'images': torch.from_numpy(new_array_1).float(), 'aux_data': np.array(aux_data),'irradiance': np.array([target])}

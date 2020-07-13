@@ -230,32 +230,32 @@ class Sirta_seq_generator():
                         minu = 0
                         while h < 18:
                             if self.test_seq(y, m, d, h, minu, computer):
-                                """if random.random() < 0.8:
+                                if random.random() < 0.8:
                                     set_id = 'training_set'
                                 else:
-                                    set_id = 'validation_set'"""
-                                if m == 5 or m == 6 or m == 7 or m == 3 or m == 9 or m == 10:
+                                    set_id = 'validation_set'
+                                """if m == 5 or m == 6 or m == 7 or m == 3 or m == 9 or m == 10:
                                     set_id = 'training_set'
                                 if m == 8 or m == 4:
-                                    set_id = 'validation_set'
+                                    set_id = 'validation_set'"""
                                 if set_id == 'training_set':
                                     training_list.append([m, d, h, minu])
                                 if set_id == 'validation_set':
                                     validation_list.append([m, d, h, minu])
                             y, m, d, h, minu = self.find_next_seq_index(y, m, d, h, minu, lookback, lookforward)
 
-        #random.shuffle(training_list)
-        #random.shuffle(validation_list)
+        random.shuffle(training_list)
+        random.shuffle(validation_list)
         print('\nNumber of Sequences available given the constraints :',
               np.shape(training_list)[0] + np.shape(validation_list)[0])
         print('\nNumber of Sequences available in the training list :', np.shape(training_list)[0])
         print('Number of Sequences available in the validation list :', np.shape(validation_list)[0])
 
-        #training_seq_indexes = training_list[0:nb_training_seq]
-        #validation_seq_indexes = validation_list[0:nb_validation_seq]
+        training_seq_indexes = training_list[0:nb_training_seq]
+        validation_seq_indexes = validation_list[0:nb_validation_seq]
         # for sequential in order - LSTM
-        training_seq_indexes = training_list[438:438 + nb_training_seq]
-        validation_seq_indexes = validation_list[134:134 + nb_validation_seq]
+        #training_seq_indexes = training_list[438:438 + nb_training_seq]
+        #validation_seq_indexes = validation_list[134:134 + nb_validation_seq]
 
         print('\nNumber of Sequences in the training list :', len(training_seq_indexes))
         print('Number of Sequences in the validation list :', len(validation_seq_indexes))
