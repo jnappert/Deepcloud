@@ -55,13 +55,13 @@ class LSTMModel(nn.Module):
              ('fc_2_act', nn.ReLU()),
         ]))
 
-        self.cat_model_keras = nn.Sequential(OrderedDict([
+        """self.cat_model_keras = nn.Sequential(OrderedDict([
             ('cat_fc_1_linear', nn.Linear(144, 64)), #this is 144 for forecasting, 128 for nowcasting
             ('cat_fc_1_act', nn.ReLU()),
             ('cat_fc_2_linear', nn.Linear(64, 32)),
             ('cat_fc_2_act', nn.ReLU()),
             ('out', nn.Linear(32, 1)),
-        ]))
+        ]))"""
 
         self.lstm = nn.Sequential(OrderedDict([
             ('lstm_layers', nn.LSTM(input_size=self.input_dim, hidden_size=self.hidden_dim, num_layers=self.layers, dropout=0.5))]))
@@ -81,9 +81,9 @@ class LSTMModel(nn.Module):
         image_t_minus2 = image[:, 0, :, :].unsqueeze(1)
         image_t_minus = image[:, 1, :, :].unsqueeze(1)
         image_t_0 = image[:, 2, :, :].unsqueeze(1)
-        aux_data_t_minus2 = aux_data[:, 0, :]  #.float()
-        aux_data_t_minus = aux_data[:, 1, :]  # .float()
-        aux_data_t_0 = aux_data[:, 2, :]  #.float()
+        aux_data_t_minus2 = aux_data[:, 0, :]
+        aux_data_t_minus = aux_data[:, 1, :]
+        aux_data_t_0 = aux_data[:, 2, :]
         x1 = self.cnn_model_keras(image_t_minus2)
         y1 = self.cnn_model_keras(image_t_minus)
         z1 = self.cnn_model_keras(image_t_0)

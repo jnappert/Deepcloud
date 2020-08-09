@@ -277,26 +277,26 @@ class Trainer:
             MAEp = 0
             total = 0
             #for H in range(5, 20):
-            for H in range(8, 18):
+            for H in range(7, 18):
                 for i in range(0, 4):
                     Minu = i * 15
                     self.index = [Y, M, D, H, Minu]
-                    n, a = self.evaluate_sample()
+                    n, a, p = self.evaluate_sample()
                     _, _, _, H_lf, Minu_lf = self.helper.lookforward_index(Y, M, D, H, Minu)
                     _, _, _, _, Minu_lf = self.helper.string_index(Y, M, D, H_lf, Minu_lf)
                     time.append('{}:{}'.format(H_lf, Minu_lf))
                     nowcast.append(n)
                     actual.append(a)
-                    #persistence.append(p)
+                    persistence.append(p)
                     MAE += np.abs(a - n)
-                    #MAEp += np.abs(a - p)
+                    MAEp += np.abs(a - p)
                     total += 1
             plt.plot(time, actual)
             plt.plot(time, nowcast)
             plt.plot(time, persistence, '-.')
-            plt.title('EPOCH: {}. {}/{}/{}  ||  MAE = {:0.2f} || MAE_per = {:0.2f}'.format(self.epoch, D, M, Y, MAE/total, 0)) #MAEp/total))
-            #plt.legend(['actual', 'forecast', 'persistence'])
-            plt.legend(['actual', 'forecast'])
+            plt.title('EPOCH: {}. {}/{}/{}  ||  MAE = {:0.2f} || MAE_per = {:0.2f}'.format(self.epoch, D, M, Y, MAE/total, MAEp/total))
+            plt.legend(['actual', 'forecast', 'persistence'])
+            #plt.legend(['actual', 'forecast'])
             """plt.xticks(
                 ['6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
                  '17:00', '18:00', '19:00'], rotation=90)"""
@@ -322,8 +322,8 @@ class Trainer:
         # CNN
         #persistence = self.sample['aux_data'][0][8] * self.std + self.mean
         # lstm
-        #persistence = self.sample['aux_data'][0][-1][6] * self.std + self.mean
-        return forecast.item(), actual.item() #, persistence.item()
+        persistence = self.sample['aux_data'][0][-1][6] * self.std + self.mean
+        return forecast.item(), actual.item() , persistence.item()
 
 
     def print_log(self, loss, step_duration, data_fetch_time, model_update_time):

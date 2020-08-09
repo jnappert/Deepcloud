@@ -28,7 +28,7 @@ class SirtaTrainer(Trainer):
     def create_data(self):
         sirta_sets_idx = Sirta_seq_generator(self.config.nb_training_seq, self.config.nb_validation_seq,
                                              self.config.lookback, self.config.lookforward, self.config.step, self.config.averaged_15min_dataset,
-                                             self.helper, socket.gethostname(), self.config.preprocessed_dataset, self.config.sat_images)
+                                             self.helper, self.config.model_type, socket.gethostname(), self.config.preprocessed_dataset, self.config.sat_images)
 
         self.training_seq_indexes, self.validation_seq_indexes, self.mean, self.std = sirta_sets_idx.training_seq_indexes, \
                                                                  sirta_sets_idx.validation_seq_indexes, sirta_sets_idx.mean, sirta_sets_idx.std
@@ -40,11 +40,11 @@ class SirtaTrainer(Trainer):
 
         self.train_dataset = SirtaDataset(self.training_seq_indexes, self.config.shades, self.config.IMG_SIZE,
                                           self.config.lookback, self.config.lookforward, self.config.step,
-                                          self.config.averaged_15min_dataset, self.mean, self.std, self.helper,
+                                          self.config.averaged_15min_dataset, self.mean, self.std, self.helper, self.config.model_type,
                                           self.config.preprocessed_dataset, self.config.sat_images)
         self.val_dataset = SirtaDataset(self.validation_seq_indexes, self.config.shades, self.config.IMG_SIZE,
                                         self.config.lookback, self.config.lookforward, self.config.step,
-                                        self.config.averaged_15min_dataset, self.mean, self.std, self.helper,
+                                        self.config.averaged_15min_dataset, self.mean, self.std, self.helper, self.config.model_type,
                                         self.config.preprocessed_dataset, self.config.sat_images)
 
         # self.train_dataset = SirtaDataset(mode='train')
@@ -63,8 +63,8 @@ class SirtaTrainer(Trainer):
     def mean_std(self):
         return self.mean, self.std
 
-    def create_model(self, lstm=False, nowcast=False, image_type='RGB_HRV'):
-        #lstm = True
+    def create_model(self, lstm=False, nowcast=False, image_type='HRV'):
+        lstm = True
         nowcast = True
         if image_type == 'HRV':
             channels = 1
@@ -72,13 +72,12 @@ class SirtaTrainer(Trainer):
             channels = 3
         if image_type == 'RGB_HRV':
             channels = 4
-        if not lstm and not nowcast:
-            self.model = SirtaModel(self.config.lookback + 1)
-        elif not lstm and nowcast:
-            self.model = SirtaModel(channels)
-        else:
+        if self.config.model_type == 'Nowcast':
+            self.model = SirtaModel(channels, model='Nowcast')
+        elif self.config.model_type == 'Forecast':
+            self.model = SirtaModel(self.config.lookback + 1, model='Forecast')
+        elif self.config.model_type == 'LSTM':
             self.model = LSTMModel()
-            #self.model.reset_hidden_state()
 
     def create_loss(self):
         self.loss_fn = nn.MSELoss()  # CrossEntropyLoss()
@@ -95,9 +94,7 @@ class SirtaTrainer(Trainer):
         return self.model(batch['images'], batch['aux_data'].float())
 
     def forward_loss(self, batch, output):
-        # print('output : ', output)
-        # print('batch[irradiance] : ', batch['irradiance'])
-        return self.loss_fn(output, batch['irradiance'].float())  # .float()
+        return self.loss_fn(output, batch['irradiance'].float())
 
     def visualise(self, batch, output, mode):
         self.tensorboard.add_images(mode + '/images_short', unsqueeze(batch['images'][:, 0, :, :], 1), self.global_step,

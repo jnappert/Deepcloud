@@ -10,38 +10,52 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Model config/restore path.')
     parser.add_argument('--config', type=str, default='', help='Path of the config file')
     parser.add_argument('--restore', type=str,
-                        default='Experiments/sirta/experiments/session_DESKTOP-A1O805T_2020_06_04_23_17_02_100_epochs',
+                        default='Experiments/sirta/experiments/'
+                                'session_mario_2020_07_18_17_34_08_eumetsat_HRV_1hourForecast_highres_lr5e-4',
                         help='Path of the model to restore (weights, optimiser)')
     options = parser.parse_args()
 
     model_test = SirtaTester(options)
-    helper = Helper(0, 0, 15)
-    plot = False
-    error = True
+    helper = Helper(2, 2, 30)
+    plot = True
+    error = False
     start = time.time()
     if plot:
+        time = []
         nowcast = []
         actual = []
-        time = []
-        y = 2017
-        m = 10
-        d = 15
-        for i in range(5, 20):
-            for j in range(0, 4):
-                minu = j * 15
-                n, a = model_test.test([y, m, d, i, minu])
+        persistence = []
+        MAE = 0
+        MAEp = 0
+        total = 0
+        Y = 2018
+        M = 8
+        D = 6
+        for H in range(10, 18):
+            for i in range(0, 4):
+                Minu = i * 15
+                n, a, p = model_test.test([Y, M, D, H, Minu])
                 # print('{}:{} = '.format(i, minu), n, a)
-                _, _, _, _, Minu = helper.string_index(y, m, d, i, minu)
-                time.append('{}:{}'.format(i, Minu))
+                _, _, _, H_lf, Minu_lf = helper.lookforward_index(Y, M, D, H, Minu)
+                _, _, _, _, Minu_lf = helper.string_index(Y, M, D, H, Minu_lf)
+                time.append('{}:{}'.format(H_lf, Minu_lf))
                 nowcast.append(n)
                 actual.append(a)
+                persistence.append(p)
+                MAE += np.abs(a - n)
+                MAEp += np.abs(a - p)
+                total += 1
 
         plt.plot(time, actual)
         plt.plot(time, nowcast)
-        plt.title('{}/{}/{}'.format(d, m, y))
-        plt.legend(['actual', 'nowcast'])
-        plt.xticks(['5:00', '6:00', '7:00', '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
-                    '17:00', '18:00', '19:00', '20:00'], rotation=90)
+        plt.plot(time, persistence, '-.')
+        plt.title('{}/{}/{}'.format(D, M, Y))
+        plt.title('{}/{}/{}  ||  MAE = {:0.2f} || MAE_per = {:0.2f}'.format(D, M, Y, MAE / total,
+                                                                                       MAEp/total))
+        plt.legend(['actual', 'nowcast', 'persistence'])
+        plt.xticks(
+            ['8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
+             '17:00', '18:00'], rotation=90)
         plt.show()
 
     if error:

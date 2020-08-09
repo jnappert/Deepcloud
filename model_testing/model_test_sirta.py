@@ -16,6 +16,7 @@ from torch import unsqueeze
 from model_testing.model_test import Model_Test
 from trainers.trainer import Trainer
 from models.model_sirta import SirtaModel  #
+from models.model_lstm import LSTMModel
 from data.sirta.SirtaDataset import SirtaDataset, show_data_batch
 from metrics.regression import RegMetrics
 from trainers.trainer_sirta_sets_creation import Sirta_seq_generator
@@ -33,10 +34,22 @@ class SirtaTester(Model_Test):
 
         return self.sample
 
-
-
-    def create_model(self):
-        self.model = SirtaModel(self.config.lookback + 1)
+    def create_model(self, lstm=False, nowcast=False, image_type='HRV'):
+        lstm = True
+        #nowcast = True
+        if image_type == 'HRV':
+            channels = 1
+        if image_type == 'RGB':
+            channels = 3
+        if image_type == 'RGB_HRV':
+            channels = 4
+        if not lstm and not nowcast:
+            self.model = SirtaModel(self.config.lookback + 1)
+        elif not lstm and nowcast:
+            self.model = SirtaModel(channels)
+        else:
+            self.model = LSTMModel()
+            # self.model.reset_hidden_state()
 
     def create_loss(self):
         self.loss_fn = nn.MSELoss() #CrossEntropyLoss()

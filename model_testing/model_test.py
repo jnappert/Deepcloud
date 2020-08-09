@@ -49,6 +49,7 @@ class Model_Test:
             device_name = 'cuda:{}'.format(self.config.gpu_nb)
 
         self.device = torch.device(device_name) if self.config.gpu else torch.device('cpu')
+        #self.device = torch.device('cpu')
 
         ##########
         # Helper
@@ -83,7 +84,7 @@ class Model_Test:
         # from file
         self.mean = self.config.mean
         self.std = self.config.std
-        print(self.mean, self.std)
+        #print(self.mean, self.std)
 
         ##########
         # Model
@@ -171,7 +172,8 @@ class Model_Test:
         self.sample = self.create_sample()
         forecast = self.forward_model(self.sample) * self.std + self.mean
         actual = self.sample['irradiance'][0] * self.std + self.mean
-        return forecast.item(), actual.item()
+        persistence = self.sample['aux_data'][0][-1][6] * self.std + self.mean
+        return forecast.item(), actual.item(), persistence.item()
 
 
     def print_log(self, loss, step_duration, data_fetch_time, model_update_time):

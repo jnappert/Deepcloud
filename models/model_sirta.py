@@ -11,9 +11,18 @@ from layers.preprocessing import ImagePreprocessing
 
 
 class SirtaModel(nn.Module):
-    def __init__(self, channels):
+    def __init__(self, channels, model):
         super().__init__()
         self.channels = channels
+        # auxiliary data model input
+        if model == 'Nowcast':
+            adm_input = 6
+        elif model == 'Forecast':
+            adm_input = 9
+        # auxiliary data model output
+        adm_output = int(adm_input * 2)
+        # cat model keras input
+        cmk_input = int(128 + adm_output)
 
         """self.aux_data_model = nn.Sequential(OrderedDict([
             ('aux_fc_1_linear', nn.Linear(8, 16)), #input is 8 for forecasting cause of irradiances
@@ -36,11 +45,11 @@ class SirtaModel(nn.Module):
 
         # Nowcast
         self.aux_data_model = nn.Sequential(OrderedDict([
-            ('aux_fc_1_linear', nn.Linear(6, 12)),  # input is 8 for forecasting cause of irradiances
+            ('aux_fc_1_linear', nn.Linear(adm_input, adm_output)),  # input is 8 for forecasting cause of irradiances
             ('aux_fc_1_act', nn.ReLU()),
-            ('aux_fc_2_linear', nn.Linear(12, 12)),
+            ('aux_fc_2_linear', nn.Linear(adm_output, adm_output)),
             ('aux_fc_2_act', nn.ReLU()),
-            ('aux_fc_3_linear', nn.Linear(12, 12)),
+            ('aux_fc_3_linear', nn.Linear(adm_output, adm_output)),
             ('aux_fc_3_act', nn.ReLU()),
         ]))
 
@@ -55,12 +64,12 @@ class SirtaModel(nn.Module):
              ('conv_3', ConvBlock(32, 32, stride=2, norm='none')),
              ('res_3', ResBlock(32, 32, norm='none')),
              ('conv_4', ConvBlock(32, 32, stride=2, norm='none')),
+             ('res_4', ResBlock(32, 32, norm='none')),
+             ('conv_5', ConvBlock(32, 32, stride=2, norm='none')),
              ('res_5', ResBlock(32, 32, norm='none')),
              ('conv_6', ConvBlock(32, 32, stride=2, norm='none')),
              ('res_6', ResBlock(32, 32, norm='none')),
              ('conv_7', ConvBlock(32, 32, stride=2, norm='none')),
-             ('res_7', ResBlock(32, 32, norm='none')),
-             ('conv_8', ConvBlock(32, 32, stride=2, norm='none')),
 #             ('avg_pool', nn.AdaptiveAvgPool2d(1)),
              ('flatten', nn.Flatten()),
              ('fc_1_linear', nn.Linear(32, 512)),
@@ -70,7 +79,7 @@ class SirtaModel(nn.Module):
         ]))
 
         self.cat_model_keras = nn.Sequential(OrderedDict([
-            ('cat_fc_1_linear', nn.Linear(140, 64)), #this is 144 for forecasting, 128 for nowcasting
+            ('cat_fc_1_linear', nn.Linear(cmk_input, 64)),
             ('cat_fc_1_act', nn.ReLU()),
             ('cat_fc_2_linear', nn.Linear(64, 32)),
             ('cat_fc_2_act', nn.ReLU()),
