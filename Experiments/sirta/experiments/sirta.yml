@@ -1,20 +1,20 @@
-output_path: 'Experiments/sirta/experiments/'
+output_path: 'Experiments/sirta/experiments/Actual_Models'
 #tag: 'nowcast_eumetsat_images'
 #tag: 'test3000'
-tag: 'eumetsat_HRV_nowcastANN_100epoch_randomval'
+tag: 'NOWCAST_eumetsat_40epoch'
 #tag: 'eumetsat_HRV_1hourForecast_highres'
 
 shades: 'SAT'
 IMG_SIZE: 156 #52
-nb_training_seq: 3000 #2500
-nb_validation_seq: 750 #625  #val_iterations * batch size??
+nb_training_seq: 8000 #2500
+nb_validation_seq: 2000 #625  #val_iterations * batch size??
 lookback: 0
 lookforward: 0
-step: 15
+step: 30
 
 #epoch = n_iterations/nb_training*batch size
-batch_size: 5 #10 # 5
-n_iterations: 30000 #10000 # = batch_size*nb_epoch
+batch_size: 10 #10 # 5
+n_iterations: 32000 #10000 # = batch_size*nb_epoch
 print_iterations: 1 # print_iterations*batch_size = nb_training_seq (1 epoch)
 vis_iterations: 1000
 #val_iterations: 100

@@ -58,7 +58,7 @@ class SirtaDataset(Dataset):
         self.std = std
         self.helper = helper
         self.sat_images = sat_images
-        self.image_type = 'RGB_HRV'
+        self.image_type = 'HRV'
 
         # self.training_seq_idexes = []
         # self.validation_seq_idexes = []
@@ -192,7 +192,7 @@ class SirtaDataset(Dataset):
                     path_image_1 = os.path.join(path, file_name_1)
                     path_image_2 = os.path.join(path, file_name_2)
 
-                    if os.path.isfile(path_image_1) == True:
+                    if os.path.isfile(path_image_2) == True:
 
                         if self.shades == 'RGB' or self.shades == 'Bs' or self.shades == 'RBR':
                             img_array_BGR_1 = cv2.imread(path_image_1, 1)  # , cv2.IMREAD_GRAYSCALE)
@@ -210,12 +210,12 @@ class SirtaDataset(Dataset):
                         # -----------------------------------------------------------------------------------------
                         elif self.shades == 'SAT':
                             if self.sat_images:
-                                img_array_redim_1 = cv2.imread(path_image_1, 1)
+                                #img_array_redim_1 = cv2.imread(path_image_1, 1)
                                 img_array_redim_2 = cv2.imread(path_image_2, cv2.IMREAD_GRAYSCALE)
-                                img_array_1 = cv2.cvtColor(img_array_redim_1, cv2.COLOR_BGR2RGB)
-                                new_array_1 = cv2.resize(img_array_1, (self.IMG_SIZE, self.IMG_SIZE))
+                                #img_array_1 = cv2.cvtColor(img_array_redim_1, cv2.COLOR_BGR2RGB)
+                                #new_array_1 = cv2.resize(img_array_1, (self.IMG_SIZE, self.IMG_SIZE))
                                 #new_array_1[new_array_1 == 0] = 1
-                                new_array_1 = np.array(new_array_1).reshape(3, self.IMG_SIZE, self.IMG_SIZE)
+                                #new_array_1 = np.array(new_array_1).reshape(3, self.IMG_SIZE, self.IMG_SIZE)
                                 new_array_2 = cv2.resize(img_array_redim_2, (self.IMG_SIZE, self.IMG_SIZE))
                                 new_array_2 = np.array(new_array_2).reshape(1, self.IMG_SIZE, self.IMG_SIZE)
                             else:
@@ -294,7 +294,7 @@ class SirtaDataset(Dataset):
                             if self.image_type == 'RGB_HRV':
                                 past_images = np.concatenate((new_array_1, new_array_2))
                         else:
-                            past_images.append(new_array_1)
+                            past_images.append(new_array_2)
 
         if self.shades != 'SAT':
             [img_short_lb0, img_long_lb0] = past_images[-0]
@@ -314,7 +314,7 @@ class SirtaDataset(Dataset):
             if not lstm and not nowcast:
                 aux_data = aux_data + past_irradiances
             sample = {#'images': torch.from_numpy(np.concatenate((past_images[-0], past_images[-2], past_images[-1]))),  # forecasting
-                      'images': torch.from_numpy(past_images), #[0]), # this is for regular just colour or hrv
+                      'images': torch.from_numpy(past_images[0]), # this is for regular just colour or hrv
                       'aux_data': np.array(aux_data),  # forecasting
                       'irradiance': np.array([target]),
                       'index': np.array(samples_list_indexes)}

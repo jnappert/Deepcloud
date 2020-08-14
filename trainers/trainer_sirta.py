@@ -63,7 +63,7 @@ class SirtaTrainer(Trainer):
     def mean_std(self):
         return self.mean, self.std
 
-    def create_model(self, lstm=False, nowcast=False, image_type='RGB_HRV'):
+    def create_model(self, lstm=False, nowcast=False, image_type='HRV'):
         #lstm = True
         nowcast = True
         if image_type == 'HRV':

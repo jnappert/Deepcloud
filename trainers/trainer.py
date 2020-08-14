@@ -202,7 +202,7 @@ class Trainer:
                 # evaluate model (validation data)
                 score = self.test()
                 #evaluate sample here
-                self.evaluate_epoch()
+                #self.evaluate_epoch()
 
                 if score > self.best_score:
                     print('New best score: {:.3f} -> {:.3f}'.format(self.best_score, score))
